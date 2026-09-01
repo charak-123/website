@@ -59,7 +59,7 @@ export default function Home({ onWaitlist }) {
           <h1 className="fade-up delay-1">
             Healthcare,
             <br />
-            <em>at your door.</em>
+            <em>ghar tak.</em>
           </h1>
           <p className="hero-sub fade-up delay-2">
             Inspired by the old idea that care should travel to people, Charak connects families with verified doctors and care professionals - online or at home.
