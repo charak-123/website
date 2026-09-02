@@ -14,10 +14,19 @@ import {
   ChevronDown
 } from 'lucide-react';
 
-const doctorImage =
-  'https://images.unsplash.com/photo-1612531386530-97286d97c2d2?crop=entropy&cs=srgb&fm=jpg&q=85';
-const teamImage =
-  'https://images.unsplash.com/photo-1516841273335-e39b37888115?crop=entropy&cs=srgb&fm=jpg&q=85';
+const doctorImage = '/images/stethoscope.jpg';
+const charakSageImage = '/images/charak-sage.jpeg';
+const teamImage = '/images/care-team.jpg';
+
+const indiaScripts = [
+  { word: 'सेवा',  lang: 'Hindi',     family: "'Noto Sans Devanagari', sans-serif" },
+  { word: 'சேவை', lang: 'Tamil',     family: "'Noto Sans Tamil', sans-serif" },
+  { word: 'సేవ',   lang: 'Telugu',    family: "'Noto Sans Telugu', sans-serif" },
+  { word: 'ಸೇವೆ',  lang: 'Kannada',   family: "'Noto Sans Kannada', sans-serif" },
+  { word: 'സേവ',  lang: 'Malayalam', family: "'Noto Sans Malayalam', sans-serif" },
+  { word: 'সেবা',  lang: 'Bengali',   family: "'Noto Sans Bengali', sans-serif" },
+  { word: 'સેવા',  lang: 'Gujarati',  family: "'Noto Sans Gujarati', sans-serif" },
+];
 
 const faqs = [
   {
@@ -54,15 +63,23 @@ export default function Home({ onWaitlist }) {
       {/* HERO */}
       <section className="hero container">
         <div className="hero-copy">
-          <div className="eyebrow fade-up">ROOTED IN INDIA / MADE FOR TODAY</div>
-          <div className="hero-script fade-up delay-1">सेहत, आपके पास</div>
-          <h1 className="fade-up delay-1">
+          <div className="scripts-row fade-up">
+            <div className="scripts-words">
+              {indiaScripts.map((s, i) => (
+                <React.Fragment key={s.lang}>
+                  <span style={{ fontFamily: s.family }} title={s.lang}>{s.word}</span>
+                  {i < indiaScripts.length - 1 && <span className="script-sep" aria-hidden="true">·</span>}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+          <h1 className="fade-up delay-2">
             Healthcare,
             <br />
             <em>ghar tak.</em>
           </h1>
           <p className="hero-sub fade-up delay-2">
-            Inspired by the old idea that care should travel to people, Charak connects families with verified doctors and care professionals - online or at home.
+            Verified doctors who come to you — at home when you need it, online when you don't. Real care, on your schedule.
           </p>
           <div className="hero-actions fade-up delay-3">
             <Link to="/register" className="button button-dark" data-testid="hero-register-doctor">
@@ -78,15 +95,15 @@ export default function Home({ onWaitlist }) {
             <i />
             <span>No AI diagnosis</span>
             <i />
-            <span>Senior review for high-value bills</span>
+            <span>Home visits + online consults</span>
           </div>
         </div>
 
         <div className="hero-art">
           <div className="orb orb-one" />
           <div className="orb orb-two" />
-          <div className="hero-photo">
-            <img src={doctorImage} alt="Doctor smiling warmly" data-testid="hero-doctor-image" />
+          <div className="hero-photo" style={{ background: '#fff' }}>
+            <img src={doctorImage} alt="Stethoscope and medical equipment on a warm background" data-testid="hero-doctor-image" style={{ objectPosition: 'center 20%' }} />
             <div className="photo-stamp">
               <ShieldCheck size={16} />
               <span>
@@ -143,7 +160,7 @@ export default function Home({ onWaitlist }) {
           </h2>
           <div>
             <p className="large-copy">
-              The healthcare you need, with the thoughtfulness you deserve. Charak is inspired by Charaka - the Indian physician and sage whose work helped shape Ayurveda - and by a simpler belief: care should meet people where they are.
+              Charaka, the ancient Indian physician, believed care should travel to people — not the other way around. Charak is built on that same belief: verified doctors and care professionals, online or at your door.
             </p>
             <button className="button button-light" onClick={onWaitlist} data-testid="intro-patient-waitlist">
               Join the patient waitlist <ArrowRight size={16} />
@@ -153,7 +170,7 @@ export default function Home({ onWaitlist }) {
         <div className="heritage-note">
           <span className="heritage-glyph">*</span>
           <div>
-            <b>Parampara se prerit.</b>
+            <b>Rooted in parampara.</b>
             <small>Inspired by tradition. Designed for today.</small>
           </div>
           <span className="heritage-script">चरक</span>
@@ -163,17 +180,23 @@ export default function Home({ onWaitlist }) {
       {/* HERITAGE */}
       <section className="heritage-section">
         <div className="container heritage-grid">
-          <div className="heritage-art" aria-hidden="true">
-            <div className="sun-disc" />
-            <div className="leaf leaf-a" />
-            <div className="leaf leaf-b" />
+          <div className="heritage-art">
+            <img
+              src={charakSageImage}
+              alt="Maharishi Charak, ancient Indian physician performing eye treatment, painting"
+              style={{
+                position: 'absolute', inset: 0, width: '100%', height: '100%',
+                objectFit: 'cover', objectPosition: 'top center',
+                filter: 'sepia(0.12) brightness(0.95)',
+              }}
+            />
             <div className="heritage-stamp">
               चरक
               <small>CARE THAT TRAVELS</small>
             </div>
           </div>
           <div className="heritage-copy">
-            <div className="section-kicker">02 / A STORY WORTH CARRYING FORWARD</div>
+            <div className="section-kicker">02 / NAMED AFTER CHARAKA</div>
             <h2>
               Care used to
               <br />
@@ -182,7 +205,7 @@ export default function Home({ onWaitlist }) {
             <p className="large-copy">
               Before waiting rooms and crowded corridors, doctors travelled to where people lived. Charak brings that human idea into a modern, verified network - so care can feel closer, calmer, and more personal.
             </p>
-            <div className="heritage-quote">A doctor's presence has always been part of the healing.</div>
+            <div className="heritage-quote">Charaka held that the physician who travels to the patient carries more healing than one who waits to be found.</div>
           </div>
         </div>
       </section>
@@ -278,7 +301,7 @@ export default function Home({ onWaitlist }) {
       {/* FOR DOCTORS */}
       <section id="for-doctors" className="section container doctors">
         <div className="doctor-image">
-          <img src={teamImage} alt="Healthcare team collaborating" data-testid="doctor-team-image" />
+          <img src={teamImage} alt="Physiotherapist providing back treatment" data-testid="doctor-team-image" />
           <div className="image-caption">
             <span>
               For the people
@@ -394,9 +417,9 @@ export default function Home({ onWaitlist }) {
           <div>
             <div className="eyebrow">FOR PATIENTS &amp; FAMILIES</div>
             <h2>
-              Ab care
+              Care that
               <br />
-              <em>door nahi.</em>
+              <em>comes to you.</em>
             </h2>
           </div>
           <div>

@@ -112,6 +112,7 @@ export default function Layout({ children, onWaitlist }) {
         <div className="container footer-bottom">
           <span data-testid="footer-copyright">© 2026 Charak. All rights reserved.</span>
           <span>Designed for care that feels closer.</span>
+          <span>Inspired by Maharishi Charak — the father of Indian medicine.</span>
         </div>
       </footer>
     </div>
