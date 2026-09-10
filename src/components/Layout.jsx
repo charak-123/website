@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { HeartPulse, ArrowUpRight, Menu, X } from 'lucide-react';
+import { ArrowUpRight, Menu, X } from 'lucide-react';
 
 export default function Layout({ children, onWaitlist }) {
   const [open, setOpen] = useState(false);
@@ -10,9 +10,13 @@ export default function Layout({ children, onWaitlist }) {
       <header className="nav-wrap">
         <nav className="nav container" data-testid="site-navigation">
           <Link to="/" className="brand" data-testid="brand-home-link">
-            <span className="brand-mark">
-              <HeartPulse size={18} />
-            </span>
+            <img
+              className="brand-mark"
+              src="/images/charak-mark.png"
+              alt=""
+              width="34"
+              height="39"
+            />
             CHARAK
           </Link>
           <div className={`nav-links ${open ? 'is-open' : ''}`}>
@@ -58,8 +62,8 @@ export default function Layout({ children, onWaitlist }) {
         <div className="container footer-grid">
           <div>
             <Link to="/" className="brand footer-brand" data-testid="footer-brand-link">
-              <span className="brand-mark">
-                <HeartPulse size={18} />
+              <span className="brand-mark brand-mark-chip">
+                <img src="/images/charak-mark.png" alt="" width="26" height="30" />
               </span>
               CHARAK
             </Link>

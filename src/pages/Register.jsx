@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { HeartPulse, ShieldCheck, ArrowRight, Check } from 'lucide-react';
+import { ShieldCheck, ArrowRight, Check } from 'lucide-react';
 import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
@@ -69,10 +69,17 @@ export default function Register() {
       setAuthMethod('google');
       setVerified(true);
     } catch (err) {
+      console.error('Google sign-in failed:', err.code, err.message);
       if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
         setAccountError('');
       } else if (err.code === 'auth/account-exists-with-different-credential') {
         setAccountError('This email is already registered with a password. Use email sign-up instead.');
+      } else if (err.code === 'auth/popup-blocked') {
+        setAccountError('Your browser blocked the popup. Allow popups for this site and try again.');
+      } else if (err.code === 'auth/unauthorized-domain') {
+        setAccountError('This domain is not authorised for sign-in. Please contact support.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setAccountError('Google sign-in is not enabled yet. Please use email sign-up.');
       } else {
         setAccountError('Could not sign in with Google. Please try again.');
       }
@@ -125,9 +132,13 @@ export default function Register() {
     <div className="register-page">
       <div className="register-aside">
         <Link to="/" className="brand" data-testid="register-brand-link">
-          <span className="brand-mark">
-            <HeartPulse size={18} />
-          </span>
+          <img
+            className="brand-mark"
+            src="/images/charak-mark.png"
+            alt=""
+            width="34"
+            height="39"
+          />
           CHARAK
         </Link>
         <div>
