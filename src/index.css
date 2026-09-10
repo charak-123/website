@@ -78,3 +78,6 @@ a {
 .brand-mark-chip img{display:block;height:30px;width:auto}
 .verify-wait-note{margin:12px 0 0;font-size:11px;line-height:1.6;color:var(--muted)}
 .link-btn{border:0;background:none;padding:0;font-size:11px;color:#4a8ac2;text-decoration:underline;cursor:pointer;font-family:inherit}
+.spam-notice{margin:14px 0 0;padding:12px 14px;background:#fff;border:1px solid var(--line);font-size:11px;line-height:1.7;color:var(--muted)}
+.spam-notice strong{color:var(--ink)}
+.spam-notice code{font-family:'DM Mono',monospace;font-size:10px;background:var(--pale);padding:2px 5px;word-break:break-all}

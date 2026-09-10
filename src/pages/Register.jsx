@@ -339,6 +339,14 @@ export default function Register() {
                   : 'Create your login so you can access your Charak profile when the app launches.'}
             </p>
 
+            {awaitingVerification && (
+              <p className="spam-notice" data-testid="spam-notice">
+                <strong>Not in your inbox?</strong> Check your spam or promotions folder — the email
+                comes from <code>noreply@charak-website.firebaseapp.com</code>. Marking it “not spam”
+                helps our emails reach you later.
+              </p>
+            )}
+
             {GOOGLE_SIGN_IN_ENABLED && !verified && !awaitingVerification && (
               <>
                 <button
@@ -417,10 +425,16 @@ export default function Register() {
                   {checkingVerification ? 'Checking…' : <>I’ve confirmed my email <ArrowRight size={15} /></>}
                 </button>
                 <p className="verify-wait-note">
-                  {resent ? 'Sent again — check your inbox.' : 'Nothing in your inbox? Check spam, or'}{' '}
-                  {!resent && (
-                    <button type="button" className="link-btn" onClick={resendVerification} data-testid="resend-verification">
-                      resend the email
+                  {resent ? (
+                    'Sent again — it can take a minute to arrive.'
+                  ) : (
+                    <button
+                      type="button"
+                      className="link-btn"
+                      onClick={resendVerification}
+                      data-testid="resend-verification"
+                    >
+                      Resend the email
                     </button>
                   )}
                 </p>
