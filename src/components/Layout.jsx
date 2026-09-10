@@ -9,7 +9,7 @@ export default function Layout({ children, onWaitlist }) {
     <div className="site-shell">
       <header className="nav-wrap">
         <nav className="nav container" data-testid="site-navigation">
-          <Link to="/" className="brand" data-testid="brand-home-link">
+          <Link to="/" className="brand" aria-label="Charak" data-testid="brand-home-link">
             <img
               className="brand-mark"
               src="/images/charak-mark.png"
@@ -17,7 +17,7 @@ export default function Layout({ children, onWaitlist }) {
               width="34"
               height="39"
             />
-            CHARAK
+            <span className="brand-word" lang="hi">चरक</span>
           </Link>
           <div className={`nav-links ${open ? 'is-open' : ''}`}>
             <a href="/#how-it-works" data-testid="nav-how-it-works" onClick={() => setOpen(false)}>
@@ -61,11 +61,11 @@ export default function Layout({ children, onWaitlist }) {
       <footer className="footer">
         <div className="container footer-grid">
           <div>
-            <Link to="/" className="brand footer-brand" data-testid="footer-brand-link">
+            <Link to="/" className="brand footer-brand" aria-label="Charak" data-testid="footer-brand-link">
               <span className="brand-mark brand-mark-chip">
                 <img src="/images/charak-mark.png" alt="" width="26" height="30" />
               </span>
-              CHARAK
+              <span className="brand-word" lang="hi">चरक</span>
             </Link>
             <p className="footer-tag">
               Verified doctors.

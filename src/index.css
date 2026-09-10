@@ -81,3 +81,8 @@ a {
 .spam-notice{margin:14px 0 0;padding:12px 14px;background:#fff;border:1px solid var(--line);font-size:11px;line-height:1.7;color:var(--muted)}
 .spam-notice strong{color:var(--ink)}
 .spam-notice code{font-family:'DM Mono',monospace;font-size:10px;background:var(--pale);padding:2px 5px;word-break:break-all}
+/* Devanagari brand word: the .brand wrapper's .14em tracking suits Latin
+   caps but breaks up the shirorekha, so reset it to the Devanagari value
+   used elsewhere and give the taller script room. Colour is inherited so
+   it stays ink in the nav and white in the footer. */
+.brand-word{font-family:'Noto Sans Devanagari','Playfair Display',serif;font-size:23px;font-weight:600;letter-spacing:.02em;line-height:1.35}

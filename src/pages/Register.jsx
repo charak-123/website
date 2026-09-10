@@ -182,7 +182,7 @@ export default function Register() {
   return (
     <div className="register-page">
       <div className="register-aside">
-        <Link to="/" className="brand" data-testid="register-brand-link">
+        <Link to="/" className="brand" aria-label="Charak" data-testid="register-brand-link">
           <img
             className="brand-mark"
             src="/images/charak-mark.png"
@@ -190,7 +190,7 @@ export default function Register() {
             width="34"
             height="39"
           />
-          CHARAK
+          <span className="brand-word" lang="hi">चरक</span>
         </Link>
         <div>
           <div className="eyebrow">DOCTOR ONBOARDING</div>
