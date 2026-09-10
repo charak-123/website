@@ -64,3 +64,11 @@ a {
 .google-btn:disabled{opacity:.55;cursor:not-allowed}
 .account-divider{display:flex;align-items:center;gap:12px;margin:18px 0 2px;color:var(--muted);font:10px 'DM Mono',monospace;letter-spacing:.1em}
 .account-divider:before,.account-divider:after{content:'';flex:1;height:1px;background:var(--line)}
+.legal-updated{font:10px 'DM Mono',monospace;letter-spacing:.12em;color:#5284a5;margin:-50px 0 60px}
+.legal-body p+p{margin-top:12px}
+.legal-list{margin:12px 0 0;padding-left:18px;color:var(--muted);font-size:13px;line-height:1.75}
+.legal-list li{margin:7px 0}
+.legal-list li::marker{color:#78a9c4}
+.legal-footer-links{display:flex;flex-wrap:wrap;gap:26px;max-width:780px;margin-top:45px;padding-top:22px;border-top:1px solid var(--line)}
+.legal-footer-links a{font:10px 'DM Mono',monospace;letter-spacing:.12em;color:#5284a5}
+.legal-footer-links a:hover{color:#4a8ac2}
