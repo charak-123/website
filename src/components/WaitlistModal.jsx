@@ -1,13 +1,29 @@
 import React, { useState } from 'react';
 import { X, ArrowRight, Check } from 'lucide-react';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase';
 
 export default function WaitlistModal({ close }) {
   const [sent, setSent] = useState(false);
   const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSent(true);
+    setSubmitting(true);
+    setError('');
+    try {
+      await addDoc(collection(db, 'waitlist'), {
+        email,
+        createdAt: serverTimestamp()
+      });
+      setSent(true);
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -51,10 +67,16 @@ export default function WaitlistModal({ close }) {
                   data-testid="patient-waitlist-email"
                 />
               </label>
-              <button className="button button-dark full" type="submit" data-testid="patient-waitlist-submit">
-                Join the waitlist <ArrowRight size={16} />
+              <button
+                className="button button-dark full"
+                type="submit"
+                disabled={submitting}
+                data-testid="patient-waitlist-submit"
+              >
+                {submitting ? 'Joining…' : <>Join the waitlist <ArrowRight size={16} /></>}
               </button>
             </form>
+            {error && <small className="form-hint" data-testid="waitlist-error">{error}</small>}
             <small>We’ll only send meaningful updates. No noise.</small>
           </div>
         )}

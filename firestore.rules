@@ -1,0 +1,18 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /waitlist/{docId} {
+      allow create: if request.resource.data.keys().hasOnly(['email', 'createdAt'])
+        && request.resource.data.email is string
+        && request.resource.data.email.size() < 200;
+      allow read, update, delete: if false;
+    }
+
+    match /doctors/{docId} {
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll(['name', 'phone', 'specialty', 'city', 'channels', 'createdAt']);
+      allow read, update, delete: if false;
+    }
+  }
+}
