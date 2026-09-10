@@ -21,6 +21,9 @@ export default function Register() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [authMethod, setAuthMethod] = useState('');
   const [referenceId, setReferenceId] = useState('');
+  const [awaitingVerification, setAwaitingVerification] = useState(false);
+  const [checkingVerification, setCheckingVerification] = useState(false);
+  const [resent, setResent] = useState(false);
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -42,7 +45,8 @@ export default function Register() {
       const cred = await createUserWithEmailAndPassword(auth, form.email, password);
       await sendEmailVerification(cred.user);
       setAuthMethod('email');
-      setVerified(true);
+      // Not verified yet — the address is only proven once they click the link.
+      setAwaitingVerification(true);
     } catch (err) {
       if (err.code === 'auth/email-already-in-use') {
         setAccountError('This email is already registered.');
@@ -53,6 +57,47 @@ export default function Register() {
       }
     } finally {
       setCreatingAccount(false);
+    }
+  };
+
+  const checkVerification = async () => {
+    if (!auth.currentUser) return;
+    setAccountError('');
+    setCheckingVerification(true);
+    try {
+      await auth.currentUser.reload();
+      if (auth.currentUser.emailVerified) {
+        // email_verified is a claim inside the ID token, so force a refresh —
+        // otherwise the security rules still see the stale `false`.
+        await auth.currentUser.getIdToken(true);
+        setAwaitingVerification(false);
+        setVerified(true);
+      } else {
+        setAccountError(
+          'We haven’t received the confirmation yet. Click the link in the email, then try again.'
+        );
+      }
+    } catch (err) {
+      console.error('Verification check failed:', err.code, err.message);
+      setAccountError('Could not check verification. Please try again.');
+    } finally {
+      setCheckingVerification(false);
+    }
+  };
+
+  const resendVerification = async () => {
+    if (!auth.currentUser) return;
+    setAccountError('');
+    try {
+      await sendEmailVerification(auth.currentUser);
+      setResent(true);
+    } catch (err) {
+      console.error('Resend failed:', err.code, err.message);
+      setAccountError(
+        err.code === 'auth/too-many-requests'
+          ? 'Too many emails requested. Please wait a few minutes.'
+          : 'Could not resend the email. Please try again.'
+      );
     }
   };
 
@@ -180,6 +225,7 @@ export default function Register() {
                 channels,
                 authMethod,
                 reference,
+                emailVerified: auth.currentUser?.emailVerified || false,
                 uid: auth.currentUser?.uid || null,
                 createdAt: serverTimestamp()
               });
@@ -281,11 +327,13 @@ export default function Register() {
               {verified
                 ? authMethod === 'google'
                   ? 'Signed in with Google. You can finish your registration below.'
-                  : 'We’ve sent a verification link to your email. You can finish your registration below.'
-                : 'Create your login so you can access your Charak profile when the app launches.'}
+                  : 'Email confirmed. You can finish your registration below.'
+                : awaitingVerification
+                  ? `We’ve sent a confirmation link to ${form.email}. Open it, then come back and confirm below.`
+                  : 'Create your login so you can access your Charak profile when the app launches.'}
             </p>
 
-            {!verified && (
+            {!verified && !awaitingVerification && (
               <>
                 <button
                   type="button"
@@ -317,12 +365,12 @@ export default function Register() {
                   placeholder="name@hospital.com"
                   value={form.email}
                   onChange={update}
-                  disabled={verified}
+                  disabled={verified || awaitingVerification}
                   data-testid="doctor-email"
                 />
               </label>
 
-              {authMethod !== 'google' && (
+              {authMethod !== 'google' && !awaitingVerification && (
                 <label>
                   Create password *
                   <input
@@ -339,7 +387,7 @@ export default function Register() {
               )}
             </div>
 
-            {!verified && (
+            {!verified && !awaitingVerification && (
               <button
                 type="button"
                 className="button button-light account-btn"
@@ -349,6 +397,28 @@ export default function Register() {
               >
                 {creatingAccount ? 'Creating your account…' : <>Create account <ArrowRight size={15} /></>}
               </button>
+            )}
+
+            {awaitingVerification && (
+              <div className="verify-wait">
+                <button
+                  type="button"
+                  className="button button-light account-btn"
+                  onClick={checkVerification}
+                  disabled={checkingVerification}
+                  data-testid="check-verification-button"
+                >
+                  {checkingVerification ? 'Checking…' : <>I’ve confirmed my email <ArrowRight size={15} /></>}
+                </button>
+                <p className="verify-wait-note">
+                  {resent ? 'Sent again — check your inbox.' : 'Nothing in your inbox? Check spam, or'}{' '}
+                  {!resent && (
+                    <button type="button" className="link-btn" onClick={resendVerification} data-testid="resend-verification">
+                      resend the email
+                    </button>
+                  )}
+                </p>
+              </div>
             )}
 
             {accountError && (

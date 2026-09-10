@@ -76,3 +76,5 @@ a {
 .brand{gap:11px}
 .brand-mark-chip{width:38px;height:38px;border-radius:10px;background:var(--cream);display:grid;place-items:center;flex:0 0 auto}
 .brand-mark-chip img{display:block;height:30px;width:auto}
+.verify-wait-note{margin:12px 0 0;font-size:11px;line-height:1.6;color:var(--muted)}
+.link-btn{border:0;background:none;padding:0;font-size:11px;color:#4a8ac2;text-decoration:underline;cursor:pointer;font-family:inherit}

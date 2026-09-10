@@ -11,6 +11,9 @@ service cloud.firestore {
 
     match /doctors/{docId} {
       allow create: if request.auth != null
+        // the address must actually be confirmed — Google verifies it for us,
+        // email/password users have to click the link first
+        && request.auth.token.email_verified == true
         && request.resource.data.keys().hasAll(['name', 'phone', 'specialty', 'city', 'channels', 'createdAt'])
         // the submission must be attributed to the account that is signed in
         && request.resource.data.uid == request.auth.uid
