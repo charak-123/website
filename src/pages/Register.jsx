@@ -20,6 +20,7 @@ export default function Register() {
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [authMethod, setAuthMethod] = useState('');
+  const [referenceId, setReferenceId] = useState('');
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -104,7 +105,9 @@ export default function Register() {
           </h1>
           <p>
             Thank you, Dr. <span>{displayName}</span>. Your reference ID is{' '}
-            <b>CHR-24A81F</b>. Our team will verify your documents within 24–48 hours and contact you on the same number.
+            <b data-testid="registration-reference">{referenceId}</b>. Our team will verify your
+            credentials within 24–48 hours and contact you on the email and phone number you gave us.
+            Please quote this reference ID if you get in touch.
           </p>
           <button
             className="button button-dark"
@@ -160,13 +163,16 @@ export default function Register() {
             if (!(verified && hasChannel) || submitting) return;
             setSubmitting(true);
             try {
+              const reference = `CHR-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
               await addDoc(collection(db, 'doctors'), {
                 ...form,
                 channels,
                 authMethod,
+                reference,
                 uid: auth.currentUser?.uid || null,
                 createdAt: serverTimestamp()
               });
+              setReferenceId(reference);
               setSent(true);
             } catch (err) {
               setAccountError('Could not submit registration. Please try again.');
@@ -389,7 +395,7 @@ export default function Register() {
           </button>
 
           {!verified && (
-            <small className="submit-hint" data-testid="phone-verification-hint">
+            <small className="submit-hint" data-testid="submit-hint">
               Create your account above to enable submission.
             </small>
           )}
