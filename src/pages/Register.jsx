@@ -10,6 +10,12 @@ import {
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
+// Google sign-in is hidden until we have a custom domain and can complete
+// OAuth branding verification — until then the consent screen shows a raw
+// firebaseapp.com domain with no Charak branding. The flow below still
+// works; flip this back to true once the domain is verified.
+const GOOGLE_SIGN_IN_ENABLED = false;
+
 export default function Register() {
   const navigate = useNavigate();
   const [verified, setVerified] = useState(false);
@@ -333,7 +339,7 @@ export default function Register() {
                   : 'Create your login so you can access your Charak profile when the app launches.'}
             </p>
 
-            {!verified && !awaitingVerification && (
+            {GOOGLE_SIGN_IN_ENABLED && !verified && !awaitingVerification && (
               <>
                 <button
                   type="button"
