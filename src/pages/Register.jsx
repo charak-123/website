@@ -16,6 +16,14 @@ import { auth, db } from '../firebase';
 // works; flip this back to true once the domain is verified.
 const GOOGLE_SIGN_IN_ENABLED = false;
 
+// Where the confirmation link drops people once they click it. The domain has
+// to be listed under Authentication -> Settings -> Authorized domains, and in
+// local dev window.location.origin keeps the link pointing back at localhost.
+const verificationSettings = {
+  url: `${window.location.origin}/register`,
+  handleCodeInApp: false
+};
+
 export default function Register() {
   const navigate = useNavigate();
   const [verified, setVerified] = useState(false);
@@ -32,9 +40,12 @@ export default function Register() {
   const [resent, setResent] = useState(false);
   const [form, setForm] = useState({
     name: '',
+    dialCode: '+91',
     phone: '',
     email: '',
     specialty: '',
+    country: 'India',
+    countryOther: '',
     city: '',
     experience: ''
   });
@@ -49,7 +60,7 @@ export default function Register() {
     setCreatingAccount(true);
     try {
       const cred = await createUserWithEmailAndPassword(auth, form.email, password);
-      await sendEmailVerification(cred.user);
+      await sendEmailVerification(cred.user, verificationSettings);
       setAuthMethod('email');
       // Not verified yet — the address is only proven once they click the link.
       setAwaitingVerification(true);
@@ -95,7 +106,7 @@ export default function Register() {
     if (!auth.currentUser) return;
     setAccountError('');
     try {
-      await sendEmailVerification(auth.currentUser);
+      await sendEmailVerification(auth.currentUser, verificationSettings);
       setResent(true);
     } catch (err) {
       console.error('Resend failed:', err.code, err.message);
@@ -139,12 +150,24 @@ export default function Register() {
     }
   };
 
-  const update = (e) =>
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
+  const update = (e) => {
+    const { name, value } = e.target;
+    if (name === 'country') {
+      const india = value === 'India';
+      setForm({
+        ...form,
+        country: value,
+        countryOther: india ? '' : form.countryOther,
+        dialCode: india ? '+91' : ''
+      });
+      // Home visits only exist where we have doctors on the ground.
+      if (!india) setChannels({ online: true, home: false });
+      return;
+    }
+    setForm({ ...form, [name]: value });
+  };
 
+  const inIndia = form.country === 'India';
   const hasChannel = channels.online || channels.home;
   const displayName = (form.name || 'there').replace(/^dr\.?\s*/i, '');
 
@@ -260,11 +283,23 @@ export default function Register() {
             <label>
               Phone number *
               <div className="phone-row">
-                <span>+91</span>
+                {inIndia ? (
+                  <span>+91</span>
+                ) : (
+                  <input
+                    className="dial-code"
+                    name="dialCode"
+                    required
+                    placeholder="+971"
+                    value={form.dialCode}
+                    onChange={update}
+                    data-testid="doctor-dial-code"
+                  />
+                )}
                 <input
                   name="phone"
                   required
-                  placeholder="98765 43210"
+                  placeholder="XXXXXXXXXX"
                   value={form.phone}
                   onChange={update}
                   data-testid="doctor-phone"
@@ -295,6 +330,34 @@ export default function Register() {
                 <option>Other</option>
               </select>
             </label>
+
+            <label>
+              Country *
+              <select
+                name="country"
+                required
+                value={form.country}
+                onChange={update}
+                data-testid="doctor-country"
+              >
+                <option>India</option>
+                <option value="Outside India">Outside India</option>
+              </select>
+            </label>
+
+            {!inIndia && (
+              <label>
+                Which country? *
+                <input
+                  name="countryOther"
+                  required
+                  placeholder="e.g., United Arab Emirates"
+                  value={form.countryOther}
+                  onChange={update}
+                  data-testid="doctor-country-other"
+                />
+              </label>
+            )}
 
             <label>
               City *
@@ -450,7 +513,7 @@ export default function Register() {
 
           <div className="channel-box">
             <b>Preferred channels *</b>
-            <p>Choose one or both</p>
+            <p>{inIndia ? 'Choose one or both' : 'Outside India we onboard doctors for online consultations only'}</p>
             <label className="check-label">
               <input
                 type="checkbox"
@@ -469,6 +532,7 @@ export default function Register() {
               <input
                 type="checkbox"
                 checked={channels.home}
+                disabled={!inIndia}
                 onChange={(e) =>
                   setChannels({
                     ...channels,
@@ -477,7 +541,7 @@ export default function Register() {
                 }
                 data-testid="channel-home"
               />
-              Home Visit
+              Home Visit{!inIndia && ' (India only)'}
             </label>
           </div>
 

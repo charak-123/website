@@ -86,3 +86,8 @@ a {
    used elsewhere and give the taller script room. Colour is inherited so
    it stays ink in the nav and white in the footer. */
 .brand-word{font-family:'Noto Sans Devanagari','Playfair Display',serif;font-size:23px;font-weight:600;letter-spacing:.02em;line-height:1.35}
+
+/* Dial code box shown in place of the fixed +91 for doctors outside India */
+.phone-row .dial-code{width:74px;flex:0 0 74px;border-right:0;text-align:center;padding-left:6px;padding-right:6px}
+.check-label input:disabled{cursor:not-allowed}
+.check-label:has(input:disabled){color:var(--muted);cursor:not-allowed}
