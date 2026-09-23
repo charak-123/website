@@ -133,3 +133,6 @@ a {
 .success-note{font-size:12.5px!important;line-height:1.8;color:var(--muted);border-left:2px solid var(--line);padding-left:16px;max-width:520px}
 .field-hint{display:block;margin-top:7px;font-size:10.5px;font-weight:500;color:var(--muted)}
 .phone-row .dial-code{width:84px;flex:0 0 84px}
+.field-error{display:block;margin-top:7px;font-size:10.5px;font-weight:600;color:#b06b5b;line-height:1.5}
+.field-error.consent-error{margin-top:9px}
+.channel-box .field-error{margin-top:11px}

@@ -1,0 +1,35 @@
+# Charak
+
+> Charak connects patients in India with verified doctors for online
+> consultations and scheduled home visits. Every practitioner is manually
+> verified against their medical council registration before being listed.
+> This site is the pre-launch web presence: it explains the service and
+> registers doctors ahead of the mobile app.
+
+Charak is a booking and intermediary platform, not a medical provider. It does
+not offer emergency services, ambulances, triage, or AI diagnosis. Clinical
+advice comes from the practitioner to the patient directly; Charak is not a
+party to the consultation.
+
+Doctors register on the web, are verified manually by the Charak team within
+24-48 hours, and then set their own channels (online consult, home visit, or
+both), schedule, service radius, and fees. Registration is free, and being
+registered is not the same as being listed — listing follows verification.
+
+## Pages
+
+- [Home](https://charak.care/): What Charak is, how it works, value for doctors, and FAQ.
+- [Doctor registration](https://charak.care/register): Registration for qualified practitioners. Requires a Charak account with a confirmed email address.
+- [Contact](https://charak.care/contact): Support and grievance contact, including the response SLA for data requests.
+
+## Legal
+
+- [Privacy Policy](https://charak.care/privacy): What is collected, why, and the rights available under India's Digital Personal Data Protection Act, 2023.
+- [Terms of Service](https://charak.care/terms): Eligibility, the manual verification process, and the limits of registration.
+- [Medical Disclaimer](https://charak.care/disclaimer): The boundary between the platform and clinical care, and what Charak is not for.
+
+## Notes
+
+- Eligibility: MBBS, BDS, BAMS and specialists holding a valid registration with the relevant Indian medical or paramedical council. Doctors outside India are onboarded for online consultations only.
+- Charak never asks for payment in exchange for verification or a listing.
+- The word "Charak" refers to Maharishi Charak, a founding figure of Ayurvedic medicine.

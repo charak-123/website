@@ -13,6 +13,7 @@ export default function Register() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [consent, setConsent] = useState(false);
+  const [errors, setErrors] = useState({});
   // A doctor who forgot whether they already registered should be told, not
   // left guessing. Rules only let someone read their own record.
   const [existing, setExisting] = useState(null);
@@ -59,6 +60,7 @@ export default function Register() {
 
   const update = (e) => {
     const { name, value } = e.target;
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
     if (name === 'country') {
       const india = value === 'India';
       setForm({
@@ -110,6 +112,57 @@ export default function Register() {
     ? phoneDigits.length === 10
     : dialDigits.length >= 1 && totalDigits >= 7 && totalDigits <= 15;
   const needsSpecialtyDetail = form.specialty === 'Other' && !form.specialtyOther.trim();
+
+  // Every required field is checked on its trimmed value. `required` alone is
+  // not enough: a single space satisfies it, and the record would then be
+  // rejected by the security rules with an opaque permission error.
+  const validate = () => {
+    const next = {};
+    const name = form.name.trim();
+    if (!name) next.name = 'Please enter your full name.';
+    else if (name.length < 2) next.name = 'That name looks too short.';
+    else if (name.length > 80) next.name = 'Please keep your name under 80 characters.';
+
+    if (!form.phone.trim()) next.phone = 'Please enter your phone number.';
+    else if (!phoneLooksValid) {
+      next.phone = inIndia
+        ? 'Please enter a valid 10-digit mobile number.'
+        : 'Please enter a valid number, with its country calling code.';
+    }
+
+    if (!form.specialty) next.specialty = 'Please choose your specialty.';
+    if (needsSpecialtyDetail) next.specialtyOther = 'Please tell us which specialisation you practise.';
+
+    const city = form.city.trim();
+    if (!city) next.city = 'Please enter the city you practise in.';
+    else if (city.length > 100) next.city = 'Please use a shorter city name.';
+
+    const state = form.state.trim();
+    if (!state) next.state = 'Please enter your state or region.';
+    else if (state.length > 100) next.state = 'Please use a shorter name.';
+
+    // Optional, but if they type something it has to be a real number.
+    const exp = form.experience.trim();
+    if (exp && !/^\d{1,2}$/.test(exp)) next.experience = 'Enter years as a number, e.g. 8.';
+    else if (exp && Number(exp) > 60) next.experience = 'Please enter 60 or fewer years.';
+
+    if (!hasChannel) next.channels = 'Choose at least one channel.';
+    if (!consent) next.consent = 'Please accept the Privacy Policy and Terms to continue.';
+    return next;
+  };
+
+  // Maps a field to its input so the first problem can be focused and read out.
+  const FIELD_TESTIDS = {
+    name: 'doctor-full-name',
+    phone: 'doctor-phone',
+    specialty: 'doctor-specialty',
+    specialtyOther: 'doctor-specialty-other',
+    city: 'doctor-city',
+    state: 'doctor-state',
+    experience: 'doctor-experience',
+    channels: 'channel-online',
+    consent: 'doctor-consent'
+  };
 
   // Not signed in, or the address is not confirmed yet — the account step is
   // its own page now.
@@ -179,21 +232,23 @@ export default function Register() {
         </p>
 
         <form
+          noValidate
           onSubmit={async (e) => {
             e.preventDefault();
-            if (!hasChannel || !consent || submitting) return;
-            if (needsSpecialtyDetail) {
-              setError('Please tell us which specialisation you practise.');
+            if (submitting) return;
+
+            const found = validate();
+            setErrors(found);
+            const firstBad = Object.keys(found)[0];
+            if (firstBad) {
+              setError('');
+              // Take them to the problem rather than leaving them to hunt.
+              const el = document.querySelector(`[data-testid="${FIELD_TESTIDS[firstBad]}"]`);
+              el?.focus();
+              el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
               return;
             }
-            if (!phoneLooksValid) {
-              setError(
-                inIndia
-                  ? 'Please enter a valid 10-digit mobile number.'
-                  : 'Please enter a valid phone number with its country code.'
-              );
-              return;
-            }
+
             setSubmitting(true);
             setError('');
             try {
@@ -254,7 +309,11 @@ export default function Register() {
                 onChange={update}
                 data-testid="doctor-full-name"
               />
-            </label>
+            
+              {errors.name && (
+                <small className="field-error" role="alert">{errors.name}</small>
+              )}
+              </label>
 
             <label>
               Phone number *
@@ -282,11 +341,15 @@ export default function Register() {
                   data-testid="doctor-phone"
                 />
               </div>
-              <small className="field-hint">
-                {inIndia
-                  ? '10-digit mobile number.'
-                  : 'Enter the number without the leading zero, e.g. +971 50 123 4567.'}
-              </small>
+              {errors.phone ? (
+                <small className="field-error" role="alert">{errors.phone}</small>
+              ) : (
+                <small className="field-hint">
+                  {inIndia
+                    ? '10-digit mobile number.'
+                    : 'Enter the number without the leading zero, e.g. +971 50 123 4567.'}
+                </small>
+              )}
             </label>
 
             <label>
@@ -311,7 +374,11 @@ export default function Register() {
                 <option>Nurse</option>
                 <option>Other</option>
               </select>
-            </label>
+            
+              {errors.specialty && (
+                <small className="field-error" role="alert">{errors.specialty}</small>
+              )}
+              </label>
 
             {form.specialty === 'Other' && (
               <label>
@@ -325,6 +392,10 @@ export default function Register() {
                   onChange={update}
                   data-testid="doctor-specialty-other"
                 />
+              
+              {errors.specialtyOther && (
+                <small className="field-error" role="alert">{errors.specialtyOther}</small>
+              )}
               </label>
             )}
 
@@ -361,7 +432,11 @@ export default function Register() {
                 onChange={update}
                 data-testid="doctor-city"
               />
-            </label>
+            
+              {errors.city && (
+                <small className="field-error" role="alert">{errors.city}</small>
+              )}
+              </label>
 
             <label>
               State / Region *
@@ -373,7 +448,11 @@ export default function Register() {
                 onChange={update}
                 data-testid="doctor-state"
               />
-            </label>
+            
+              {errors.state && (
+                <small className="field-error" role="alert">{errors.state}</small>
+              )}
+              </label>
 
             <label>
               Years of experience
@@ -384,7 +463,11 @@ export default function Register() {
                 onChange={update}
                 data-testid="doctor-experience"
               />
-            </label>
+            
+              {errors.experience && (
+                <small className="field-error" role="alert">{errors.experience}</small>
+              )}
+              </label>
           </div>
 
           <div className="channel-box">
@@ -394,7 +477,10 @@ export default function Register() {
               <input
                 type="checkbox"
                 checked={channels.online}
-                onChange={(e) => setChannels({ ...channels, online: e.target.checked })}
+                onChange={(e) => {
+                  setChannels({ ...channels, online: e.target.checked });
+                  if (errors.channels) setErrors((prev) => ({ ...prev, channels: '' }));
+                }}
                 data-testid="channel-online"
               />
               Online Consult
@@ -404,11 +490,17 @@ export default function Register() {
                 type="checkbox"
                 checked={channels.home}
                 disabled={!inIndia}
-                onChange={(e) => setChannels({ ...channels, home: e.target.checked })}
+                onChange={(e) => {
+                  setChannels({ ...channels, home: e.target.checked });
+                  if (errors.channels) setErrors((prev) => ({ ...prev, channels: '' }));
+                }}
                 data-testid="channel-home"
               />
               Home Visit{!inIndia && ' (India only)'}
             </label>
+            {errors.channels && (
+              <small className="field-error" role="alert">{errors.channels}</small>
+            )}
           </div>
 
           <label className="check-label consent">
@@ -416,31 +508,27 @@ export default function Register() {
               type="checkbox"
               required
               checked={consent}
-              onChange={(e) => setConsent(e.target.checked)}
+              onChange={(e) => {
+                setConsent(e.target.checked);
+                if (errors.consent) setErrors((prev) => ({ ...prev, consent: '' }));
+              }}
               data-testid="doctor-consent"
             />{' '}
             I agree to the{' '}
             <Link to="/privacy">Privacy Policy</Link> and Terms and consent to Charak processing my data.
           </label>
+          {errors.consent && (
+            <small className="field-error consent-error" role="alert">{errors.consent}</small>
+          )}
 
           <button
             className="button button-dark full submit-btn"
             type="submit"
-            disabled={!hasChannel || !consent || needsSpecialtyDetail || submitting}
+            disabled={submitting}
             data-testid="submit-doctor-registration"
           >
             {submitting ? 'Submitting…' : <>Submit Registration <ArrowRight size={16} /></>}
           </button>
-
-          {(!hasChannel || !consent || needsSpecialtyDetail) && (
-            <small className="submit-hint" data-testid="submit-hint">
-              {!hasChannel
-                ? 'Pick at least one channel to enable submission.'
-                : needsSpecialtyDetail
-                  ? 'Tell us which specialisation you practise to enable submission.'
-                  : 'Tick the consent box to enable submission.'}
-            </small>
-          )}
 
           {error && (
             <small className="account-error" role="alert" data-testid="account-error">

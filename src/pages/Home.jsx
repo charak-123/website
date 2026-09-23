@@ -39,7 +39,7 @@ const faqs = [
   },
   {
     q: 'How long does verification take?',
-    a: 'Usually 24–48 hours after you submit your certificate.'
+    a: 'Usually 24–48 hours after you register. We may contact you for supporting documents if we need them to complete your verification.'
   },
   {
     q: 'Do I need to offer home visits?',

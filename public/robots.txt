@@ -1,0 +1,11 @@
+# charak.care
+User-agent: *
+Allow: /
+
+# Confirmation page carries a reference ID and is not an entry point.
+Disallow: /register/success
+# Account pages are gated and have nothing to index.
+Disallow: /signin
+Disallow: /signup
+
+Sitemap: https://charak.care/sitemap.xml
