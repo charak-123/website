@@ -7,7 +7,7 @@ const ENTITY = {
   name: '[Legal entity name, e.g. Charak Health Technologies Pvt. Ltd.]',
   address: '[Registered office address]',
   grievanceOfficer: '[Grievance Officer name]',
-  email: 'grievance@charak.health',
+  email: 'upcharchikitsa@gmail.com',
   effectiveDate: '10 September 2026'
 };
 

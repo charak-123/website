@@ -17,12 +17,14 @@ export default function Contact() {
 
         <div className="contact-card">
           <span>Email</span>
-          <a href="mailto:grievance@charak.health" data-testid="grievance-email">
-            grievance@charak.health
+          <a href="mailto:upcharchikitsa@gmail.com" data-testid="grievance-email">
+            upcharchikitsa@gmail.com
           </a>
 
           <span>Phone</span>
-          <p data-testid="contact-phone">+91-XXXXX XXXXX</p>
+          <a href="tel:+918655044414" data-testid="contact-phone">
+            +91 86550 44414
+          </a>
 
           <span>Response SLA</span>
           <p>30 days</p>

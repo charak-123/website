@@ -157,10 +157,12 @@ export default function Layout({ children, onWaitlist }) {
 
           <div>
             <p className="footer-label">Get in touch</p>
-            <a href="mailto:support@charak.health" data-testid="footer-email">
-              support@charak.health
+            <a href="mailto:upcharchikitsa@gmail.com" data-testid="footer-email">
+              upcharchikitsa@gmail.com
             </a>
-            <span data-testid="footer-phone">+91-XXXXX XXXXX</span>
+            <a href="tel:+918655044414" data-testid="footer-phone">
+              +91 86550 44414
+            </a>
             <span data-testid="footer-address">[Registered Address — placeholder]</span>
           </div>
         </div>
