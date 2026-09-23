@@ -34,7 +34,7 @@ const privacy = {
         P('We only collect what we actually need. Today that is:'),
         UL([
           'Waitlist: your email address and the time you joined.',
-          'Doctor registration: your full name, phone number, email address, specialty or category, city, years of experience (optional), and the consultation channels you prefer (online consult and/or home visit).',
+          'Doctor registration: your full name, phone number, email address, specialty or category, the country, state and city you practise in, years of experience (optional), and the consultation channels you prefer (online consult and/or home visit).',
           'Account details: if you register with an email and password, we store your email and an encrypted form of your password. If you continue with Google, we receive your name, email address, and Google account identifier — we never receive your Google password.',
           'Technical records: standard server logs and timestamps generated when you use the site.'
         ]),

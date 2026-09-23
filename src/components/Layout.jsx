@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowUpRight, Menu, X } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { ArrowUpRight, Menu, X, UserRound } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Layout({ children, onWaitlist }) {
   const [open, setOpen] = useState(false);
+  const { user, ready, signOut } = useAuth();
+  const { pathname } = useLocation();
+  // The auth page carries its own identity; a "Sign in" button on top of it
+  // would just be noise.
+  const onAuthPage = pathname === '/signin' || pathname === '/signup';
 
   return (
     <div className="site-shell">
@@ -32,11 +38,57 @@ export default function Layout({ children, onWaitlist }) {
             <Link to="/contact" data-testid="nav-contact" onClick={() => setOpen(false)}>
               Contact
             </Link>
+            <Link
+              className="nav-mobile-only"
+              to="/register"
+              onClick={() => setOpen(false)}
+              data-testid="nav-mobile-register"
+            >
+              Register as Doctor
+            </Link>
+            {ready && user ? (
+              <button
+                className="text-btn nav-mobile-only"
+                onClick={() => {
+                  setOpen(false);
+                  signOut();
+                }}
+                data-testid="nav-mobile-sign-out"
+              >
+                Sign out ({user.email})
+              </button>
+            ) : (
+              <Link
+                className="nav-mobile-only"
+                to="/signin"
+                onClick={() => setOpen(false)}
+                data-testid="nav-mobile-sign-in"
+              >
+                Doctor sign in
+              </Link>
+            )}
           </div>
           <div className="nav-actions">
             <button className="text-btn" onClick={onWaitlist} data-testid="nav-patient-waitlist">
               Join patient waitlist
             </button>
+
+            {ready && user ? (
+              <span className="nav-account" data-testid="nav-account">
+                <UserRound size={14} />
+                <span className="nav-account-email">{user.email}</span>
+                <button className="link-btn" onClick={() => signOut()} data-testid="nav-sign-out">
+                  Sign out
+                </button>
+              </span>
+            ) : (
+              !onAuthPage && (
+                <Link className="text-btn nav-signin" to="/signin" data-testid="nav-sign-in">
+                  Doctor sign in
+                </Link>
+              )
+            )}
+
             <Link
               className="button button-dark button-small"
               to="/register"

@@ -9,21 +9,41 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
+    // One registration per account: the document id is the signed-in uid, so a
+    // doctor cannot create duplicates and can read back their own submission.
     match /doctors/{docId} {
       allow create: if request.auth != null
-        // the address must actually be confirmed — Google verifies it for us,
-        // email/password users have to click the link first
+        // the address must actually be confirmed — the doctor has to click the
+        // link in the verification email first
         && request.auth.token.email_verified == true
-        && request.resource.data.keys().hasAll(['name', 'phone', 'specialty', 'city', 'channels', 'createdAt'])
+        && docId == request.auth.uid
+        && request.resource.data.keys().hasAll([
+             'name', 'phone', 'specialty', 'city', 'state', 'channels',
+             'verification_status', 'source', 'consent_at', 'createdAt'
+           ])
         // the submission must be attributed to the account that is signed in
         && request.resource.data.uid == request.auth.uid
+        // nobody gets to mark themselves approved from the client
+        && request.resource.data.verification_status == 'pending'
+        && request.resource.data.source == 'website'
         && request.resource.data.name is string
-        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() > 1
         && request.resource.data.name.size() < 120
+        // stored in E.164 so the app can join on it at OTP login (PRD §8)
         && request.resource.data.phone is string
+        && request.resource.data.phone.size() > 7
         && request.resource.data.phone.size() < 20
-        && request.resource.data.city.size() < 100;
-      allow read, update, delete: if false;
+        && request.resource.data.city is string
+        && request.resource.data.city.size() < 100
+        && request.resource.data.state is string
+        && request.resource.data.state.size() < 100;
+
+      // A doctor may read back their own record — this is what tells someone
+      // who forgot whether they registered that we already have their details.
+      allow read: if request.auth != null && docId == request.auth.uid;
+
+      // Status changes and corrections go through our team, not the client.
+      allow update, delete: if false;
     }
   }
 }
