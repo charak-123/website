@@ -1,54 +1,78 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { ShieldCheck, ArrowRight, Check, LogOut } from 'lucide-react';
+import { ShieldCheck, ArrowRight, Check, LogOut, MessageSquare } from 'lucide-react';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, authMessage } from '../context/AuthContext';
 import { COUNTRIES, DIAL_BY_COUNTRY, PRIORITY_COUNTRIES } from '../data/countries';
 import { INDIA_STATES, INDIA_UNION_TERRITORIES } from '../data/indiaStates';
 
 export default function Register() {
   const navigate = useNavigate();
-  const { user, ready, isVerified, signOut } = useAuth();
+  const { user, ready, sendCode, confirmCode, signInWithGoogle, signOut } = useAuth();
+
+  // Either route creates the account, so being signed in at all is what
+  // clears step one — there is no separate sign-up.
+  const verified = !!user;
+  // Which identifier came back confirmed decides what step two still needs:
+  // a Google account arrives with an address but no number, and vice versa.
+  const viaPhone = !!user?.phoneNumber;
+  const viaGoogle = !!user && !viaPhone;
+
+  const [country, setCountry] = useState('India');
+  const [dialCode, setDialCode] = useState('+91');
+  const [phone, setPhone] = useState('');
+
+  const [confirmation, setConfirmation] = useState(null);
+  const [code, setCode] = useState('');
+  const [sendingCode, setSendingCode] = useState(false);
+  const [checkingCode, setCheckingCode] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [cooldown, setCooldown] = useState(0);
+  const [attempts, setAttempts] = useState(0);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState({});
-  // A doctor who forgot whether they already registered should be told, not
-  // left guessing. Rules only let someone read their own record.
-  const [existing, setExisting] = useState(null);
+  const [consent, setConsent] = useState(false);
+  const [existing, setExisting] = useState(false);
   const [loadingExisting, setLoadingExisting] = useState(true);
+
   const [form, setForm] = useState({
     name: '',
-    dialCode: '+91',
-    phone: '',
+    email: '',
     specialty: '',
     specialtyOther: '',
-    country: 'India',
     city: '',
     state: '',
+    pincode: '',
     experience: ''
   });
   const [channels, setChannels] = useState({ online: false, home: false });
 
+  const inIndia = country === 'India';
+
+  useEffect(() => {
+    if (cooldown <= 0) return undefined;
+    const t = setTimeout(() => setCooldown((n) => n - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
+
+  // A doctor who already registered should see their reference, not a blank
+  // form. The rules only ever let someone read their own record.
   useEffect(() => {
     let cancelled = false;
-    if (!user || !isVerified) {
+    if (!verified) {
       setLoadingExisting(false);
       return undefined;
     }
-    // Auth resolves after the first render, so the lookup starts late — go
-    // back to loading rather than flashing an empty form at someone who has
-    // already registered.
     setLoadingExisting(true);
     (async () => {
       try {
         const snap = await getDoc(doc(db, 'doctors', user.uid));
         if (!cancelled && snap.exists()) setExisting(true);
       } catch (err) {
-        // Older rule sets deny reads outright; that is not a reason to block
-        // a fresh registration, so fail quiet.
         console.warn('Could not look up existing registration:', err.code);
       } finally {
         if (!cancelled) setLoadingExisting(false);
@@ -57,69 +81,113 @@ export default function Register() {
     return () => {
       cancelled = true;
     };
-  }, [user, isVerified]);
+  }, [verified, user]);
+
+  const e164 = () => `+${dialCode.replace(/\D/g, '')}${phone.replace(/\D/g, '')}`;
+  const phoneDigits = phone.replace(/\D/g, '');
+  const dialDigits = dialCode.replace(/\D/g, '');
+  const totalDigits = dialDigits.length + phoneDigits.length;
+  // E.164: 7 digits minimum, 15 maximum, country code included.
+  const phoneLooksValid = inIndia
+    ? phoneDigits.length === 10
+    : dialDigits.length >= 1 && totalDigits >= 7 && totalDigits <= 15;
+
+  const changeCountry = (value) => {
+    setCountry(value);
+    setDialCode(`+${DIAL_BY_COUNTRY[value] || ''}`);
+    // A state or PIN belonging to the old country means nothing now, and home
+    // visits only exist where we have doctors on the ground.
+    setForm((prev) => ({ ...prev, state: '', pincode: '' }));
+    if (value !== 'India') setChannels({ online: true, home: false });
+  };
+
+  const continueWithGoogle = async () => {
+    setOtpError('');
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      // Closing the popup is a decision, not an error.
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        console.error('Google sign-in failed:', err.code, err.message);
+        setOtpError(authMessage(err));
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const requestCode = async () => {
+    setOtpError('');
+    if (!phoneLooksValid) {
+      setOtpError(
+        inIndia
+          ? 'Please enter a valid 10-digit mobile number.'
+          : 'Please enter a valid number, with its country calling code.'
+      );
+      return;
+    }
+    setSendingCode(true);
+    try {
+      const result = await sendCode(e164(), 'recaptcha-host');
+      setConfirmation(result);
+      setAttempts(0);
+      setCooldown(30);
+    } catch (err) {
+      console.error('OTP send failed:', err.code, err.message);
+      setOtpError(authMessage(err));
+    } finally {
+      setSendingCode(false);
+    }
+  };
+
+  const submitCode = async () => {
+    if (code.trim().length !== 6) {
+      setOtpError('Please enter the 6-digit code we sent you.');
+      return;
+    }
+    setCheckingCode(true);
+    setOtpError('');
+    try {
+      await confirmCode(confirmation, code.trim());
+      setConfirmation(null);
+      setCode('');
+    } catch (err) {
+      console.error('OTP check failed:', err.code, err.message);
+      const used = attempts + 1;
+      setAttempts(used);
+      // Three wrong codes and the confirmation is discarded, so a fresh SMS is
+      // needed rather than letting someone sit and guess.
+      if (used >= 3) {
+        setConfirmation(null);
+        setCode('');
+        setOtpError('Too many incorrect attempts. Please request a new code.');
+      } else {
+        setOtpError(`${authMessage(err)} ${3 - used} attempt${used === 2 ? '' : 's'} left.`);
+      }
+    } finally {
+      setCheckingCode(false);
+    }
+  };
 
   const update = (e) => {
     const { name, value } = e.target;
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
-    if (name === 'country') {
-      const india = value === 'India';
-      setForm({
-        ...form,
-        country: value,
-        // A state picked from the Indian list means nothing once the country
-        // changes, and vice versa.
-        state: '',
-        // The dial code follows the country the doctor practises in; they can
-        // still override it below for a number registered elsewhere.
-        dialCode: `+${DIAL_BY_COUNTRY[value] || ''}`
-      });
-      // Home visits only exist where we have doctors on the ground.
-      if (!india) setChannels({ online: true, home: false });
-      return;
-    }
     if (name === 'specialty') {
-      // Clear the free-text detail when they move off "Other".
       setForm({ ...form, specialty: value, specialtyOther: value === 'Other' ? form.specialtyOther : '' });
       return;
     }
-    if (name === 'dialCode') {
-      // Allow a leading + and digits only.
-      setForm({ ...form, dialCode: `+${value.replace(/\D/g, '').slice(0, 4)}` });
-      return;
-    }
-    if (name === 'phone') {
-      setForm({ ...form, phone: value.replace(/[^\d\s-]/g, '') });
+    if (name === 'pincode' && inIndia) {
+      setForm({ ...form, pincode: value.replace(/\D/g, '').slice(0, 6) });
       return;
     }
     setForm({ ...form, [name]: value });
   };
 
-  const inIndia = form.country === 'India';
   const hasChannel = channels.online || channels.home;
-
-  // Phone is the join key between this site and the app (PRD §8): the app
-  // logs doctors in by phone OTP and pre-fills the profile from this record,
-  // so it has to be stored in one canonical E.164 form.
-  const e164 = () => {
-    const dial = `+${form.dialCode.replace(/\D/g, '')}`;
-    return `${dial}${form.phone.replace(/\D/g, '')}`;
-  };
-  const phoneDigits = form.phone.replace(/\D/g, '');
-  const dialDigits = form.dialCode.replace(/\D/g, '');
-  // E.164 allows at most 15 digits in total, country code included.
-  // E.164: 7 digits minimum, 15 maximum, country code included. The security
-  // rules enforce the same bounds, so keep the two in step or a short number
-  // fails server-side with an opaque permission error.
-  const totalDigits = dialDigits.length + phoneDigits.length;
-  const phoneLooksValid = inIndia
-    ? phoneDigits.length === 10
-    : dialDigits.length >= 1 && totalDigits >= 7 && totalDigits <= 15;
   const needsSpecialtyDetail = form.specialty === 'Other' && !form.specialtyOther.trim();
 
-  // Every required field is checked on its trimmed value. `required` alone is
-  // not enough: a single space satisfies it, and the record would then be
-  // rejected by the security rules with an opaque permission error.
+  // Checked on trimmed values: `required` alone is satisfied by a single space.
   const validate = () => {
     const next = {};
     const name = form.name.trim();
@@ -127,11 +195,21 @@ export default function Register() {
     else if (name.length < 2) next.name = 'That name looks too short.';
     else if (name.length > 80) next.name = 'Please keep your name under 80 characters.';
 
-    if (!form.phone.trim()) next.phone = 'Please enter your phone number.';
-    else if (!phoneLooksValid) {
-      next.phone = inIndia
-        ? 'Please enter a valid 10-digit mobile number.'
-        : 'Please enter a valid number, with its country calling code.';
+    // Optional per the PRD, but it has to look like an address if given.
+    const email = form.email.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      next.email = 'That does not look like a valid email address.';
+    }
+
+    // Phone-confirmed doctors already have a number on the account; Google
+    // ones do not, and ops needs a way to reach them.
+    if (viaGoogle) {
+      if (!phone.trim()) next.phone = 'Please enter your mobile number.';
+      else if (!phoneLooksValid) {
+        next.phone = inIndia
+          ? 'Please enter a valid 10-digit mobile number.'
+          : 'Please enter a valid number, with its country calling code.';
+      }
     }
 
     if (!form.specialty) next.specialty = 'Please choose your specialty.';
@@ -145,7 +223,14 @@ export default function Register() {
     if (!state) next.state = 'Please enter your state or region.';
     else if (state.length > 100) next.state = 'Please use a shorter name.';
 
-    // Optional, but if they type something it has to be a real number.
+    const pin = form.pincode.trim();
+    if (inIndia) {
+      if (!pin) next.pincode = 'Please enter your 6-digit PIN code.';
+      else if (!/^[1-9][0-9]{5}$/.test(pin)) next.pincode = 'A PIN code is 6 digits, e.g. 411001.';
+    } else if (pin.length > 12) {
+      next.pincode = 'That postal code looks too long.';
+    }
+
     const exp = form.experience.trim();
     if (exp && !/^\d{1,2}$/.test(exp)) next.experience = 'Enter years as a number, e.g. 8.';
     else if (exp && Number(exp) > 60) next.experience = 'Please enter 60 or fewer years.';
@@ -155,84 +240,246 @@ export default function Register() {
     return next;
   };
 
-  // Maps a field to its input so the first problem can be focused and read out.
   const FIELD_TESTIDS = {
     name: 'doctor-full-name',
+    email: 'doctor-email',
     phone: 'doctor-phone',
     specialty: 'doctor-specialty',
     specialtyOther: 'doctor-specialty-other',
     city: 'doctor-city',
     state: 'doctor-state',
+    pincode: 'doctor-pincode',
     experience: 'doctor-experience',
     channels: 'channel-online',
     consent: 'doctor-consent'
   };
 
-  // Not signed in, or the address is not confirmed yet — the account step is
-  // its own page now.
-  if (ready && (!user || !isVerified)) return <Navigate to="/signin?next=/register" replace />;
-
-  // Already on file — the confirmation page shows them their reference ID
-  // rather than a blank form they would fill in a second time.
-  if (existing) return <Navigate to="/register/success" replace />;
-
-  if (!ready || loadingExisting) {
+  if (!ready || (verified && loadingExisting)) {
     return (
       <div className="form-page container">
-        <p className="auth-loading">Loading your registration…</p>
+        <p className="auth-loading">Loading…</p>
       </div>
     );
   }
 
+  if (existing) return <Navigate to="/register/success" replace />;
+
+  const aside = (
+    <div className="register-aside">
+      <Link to="/" className="brand" aria-label="Charak" data-testid="register-brand-link">
+        <img className="brand-mark" src="/images/charak-mark.png" alt="" width="34" height="39" />
+        <span className="brand-word" lang="hi">चरक</span>
+      </Link>
+      <div>
+        <div className="eyebrow">DOCTOR ONBOARDING</div>
+        <div className="aside-script">सेवा से जुड़ें</div>
+        <h1>
+          Make care
+          <br />
+          <em>more human.</em>
+        </h1>
+        <p>Join a verified network built around the way you practice.</p>
+      </div>
+      <span className="aside-note">
+        <ShieldCheck size={16} /> Your information is handled with care
+      </span>
+    </div>
+  );
+
+  const steps = (
+    <ol className="stepper" data-testid="stepper">
+      <li className={verified ? 'is-done' : 'is-current'}>
+        <span>{verified ? <Check size={12} /> : '1'}</span> Verify your number
+      </li>
+      <li className={verified ? 'is-current' : ''}>
+        <span>2</span> Your details
+      </li>
+    </ol>
+  );
+
+  // ---- Stage 1: the number is the account -------------------------------
+  if (!verified) {
+    return (
+      <div className="register-page">
+        {aside}
+        <div className="register-form-wrap">
+          <div className="form-top">
+            <span>STEP 1 OF 2</span>
+            <Link to="/" data-testid="register-back-home">
+              Back to home
+            </Link>
+          </div>
+          {steps}
+
+          <h2>Register as a Charak Doctor</h2>
+          <p className="form-lead">
+            Continue with Google, or confirm your mobile number. Either one becomes your login —
+            there is no password to remember.
+          </p>
+
+          <div className="verify-card">
+            {!confirmation && (
+              <>
+                <button
+                  type="button"
+                  className="google-btn"
+                  onClick={continueWithGoogle}
+                  disabled={googleLoading}
+                  data-testid="google-signin-button"
+                >
+                  <svg viewBox="0 0 18 18" width="17" height="17" aria-hidden="true">
+                    <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.71-1.57 2.68-3.89 2.68-6.62Z" />
+                    <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18Z" />
+                    <path fill="#FBBC05" d="M3.97 10.72a5.41 5.41 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33Z" />
+                    <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58Z" />
+                  </svg>
+                  {googleLoading ? 'Opening Google…' : 'Continue with Google'}
+                </button>
+                <div className="account-divider"><span>or use your mobile</span></div>
+              </>
+            )}
+
+            <label>
+              Mobile number *
+              <div className="phone-row">
+                <input
+                  className="dial-code"
+                  type="tel"
+                  inputMode="numeric"
+                  value={dialCode}
+                  disabled={!!confirmation}
+                  onChange={(e) => setDialCode(`+${e.target.value.replace(/\D/g, '').slice(0, 4)}`)}
+                  aria-label="Country calling code"
+                  data-testid="doctor-dial-code"
+                />
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel-national"
+                  placeholder={inIndia ? 'XXXXXXXXXX' : 'Number without the country code'}
+                  value={phone}
+                  disabled={!!confirmation}
+                  onChange={(e) => {
+                    setPhone(e.target.value.replace(/[^\d\s-]/g, ''));
+                    if (otpError) setOtpError('');
+                  }}
+                  data-testid="doctor-phone"
+                />
+              </div>
+              <small className="field-hint">
+                {inIndia ? '10-digit mobile number.' : 'Without the leading zero.'}
+              </small>
+            </label>
+
+            {!confirmation ? (
+              <button
+                type="button"
+                className="button button-dark full"
+                onClick={requestCode}
+                disabled={sendingCode || cooldown > 0}
+                data-testid="send-otp"
+              >
+                <MessageSquare size={15} />
+                {sendingCode ? 'Sending…' : cooldown > 0 ? `Resend in ${cooldown}s` : 'Send me a code'}
+              </button>
+            ) : (
+              <div className="otp-box" data-testid="otp-box">
+                <p className="otp-lead">
+                  Enter the 6-digit code we sent to <b>{e164()}</b>.
+                </p>
+                <div className="otp-row">
+                  <input
+                    className="otp-input"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="000000"
+                    autoComplete="one-time-code"
+                    value={code}
+                    onChange={(e) => {
+                      setCode(e.target.value.replace(/\D/g, '').slice(0, 6));
+                      if (otpError) setOtpError('');
+                    }}
+                    data-testid="otp-code"
+                  />
+                  <button
+                    type="button"
+                    className="button button-dark"
+                    onClick={submitCode}
+                    disabled={checkingCode}
+                    data-testid="confirm-otp"
+                  >
+                    {checkingCode ? 'Checking…' : 'Confirm'}
+                  </button>
+                </div>
+                <div className="otp-actions">
+                  <button
+                    type="button"
+                    className="link-btn"
+                    onClick={requestCode}
+                    disabled={cooldown > 0 || sendingCode}
+                    data-testid="resend-otp"
+                  >
+                    {cooldown > 0 ? `Resend in ${cooldown}s` : 'Send a new code'}
+                  </button>
+                  <button
+                    type="button"
+                    className="link-btn"
+                    onClick={() => {
+                      setConfirmation(null);
+                      setCode('');
+                      setOtpError('');
+                    }}
+                    data-testid="change-number"
+                  >
+                    Change number
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {otpError && (
+              <small className="field-error" role="alert" data-testid="otp-error">
+                {otpError}
+              </small>
+            )}
+
+            <div id="recaptcha-host" />
+
+            <p className="verify-foot">
+              Already registered? Signing in the same way brings up your registration.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- Stage 2: the details ---------------------------------------------
   return (
     <div className="register-page">
-      <div className="register-aside">
-        <Link to="/" className="brand" aria-label="Charak" data-testid="register-brand-link">
-          <img
-            className="brand-mark"
-            src="/images/charak-mark.png"
-            alt=""
-            width="34"
-            height="39"
-          />
-          <span className="brand-word" lang="hi">चरक</span>
-        </Link>
-        <div>
-          <div className="eyebrow">DOCTOR ONBOARDING</div>
-          <div className="aside-script">सेवा से जुड़ें</div>
-          <h1>
-            Make care
-            <br />
-            <em>more human.</em>
-          </h1>
-          <p>Join a verified network built around the way you practice.</p>
-        </div>
-        <span className="aside-note">
-          <ShieldCheck size={16} /> Your information is handled with care
-        </span>
-      </div>
-
+      {aside}
       <div className="register-form-wrap">
         <div className="form-top">
-          <span>YOUR DETAILS</span>
+          <span>STEP 2 OF 2</span>
           <Link to="/" data-testid="register-back-home">
             Back to home
           </Link>
         </div>
+        {steps}
 
         <div className="signed-in-bar" data-testid="signed-in-bar">
           <span className="account-badge">
-            <Check size={13} /> Signed in
+            <Check size={13} /> {viaPhone ? 'Number confirmed' : 'Signed in with Google'}
           </span>
-          <b>{user.email}</b>
+          <b>{user.phoneNumber || user.email}</b>
           <button type="button" className="link-btn" onClick={() => signOut()} data-testid="register-sign-out">
             <LogOut size={12} /> Sign out
           </button>
         </div>
 
-        <h2>Register as a Charak Doctor</h2>
+        <h2>Your details</h2>
         <p className="form-lead">
-          Takes ~3 minutes. Your data will pre-fill your app profile when the app launches.
+          Takes ~2 minutes. This pre-fills your app profile when the app launches.
         </p>
 
         <form
@@ -240,49 +487,44 @@ export default function Register() {
           onSubmit={async (e) => {
             e.preventDefault();
             if (submitting) return;
-
             const found = validate();
             setErrors(found);
             const firstBad = Object.keys(found)[0];
             if (firstBad) {
               setError('');
-              // Take them to the problem rather than leaving them to hunt.
               const el = document.querySelector(`[data-testid="${FIELD_TESTIDS[firstBad]}"]`);
               el?.focus();
               el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
               return;
             }
-
             setSubmitting(true);
             setError('');
             try {
               const reference = `CHR-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-              // One record per account, keyed by uid — a second submission from
-              // the same login cannot create a duplicate.
-              // Field names mirror the app's own schema so launch is a status
-              // change, not a migration (PRD §6.3, §8).
+              // Keyed by uid so one account cannot register twice. Field names
+              // mirror the app's schema so launch is a status change, not a
+              // migration (PRD §6.3, §8).
               await setDoc(doc(db, 'doctors', user.uid), {
                 name: form.name.trim(),
-                phone: e164(),
-                phoneLocal: form.phone.trim(),
-                dialCode: form.dialCode,
-                email: user.email,
+                // For a phone account this is the number Firebase confirmed,
+                // never what a field says; a Google account supplies its own.
+                phone: user.phoneNumber || e164(),
+                phoneVerified: viaPhone,
+                email: user.email || form.email.trim(),
+                emailVerified: viaGoogle,
                 specialty: form.specialty,
-                // "Other" keeps the canonical value and carries the doctor's
-                // own wording alongside it, so ops can fold it into the
-                // category list later without losing what they typed.
                 specialtyOther: form.specialty === 'Other' ? form.specialtyOther.trim() : '',
-                country: form.country,
+                country,
                 city: form.city.trim(),
                 state: form.state.trim(),
+                pincode: form.pincode.trim(),
                 experience: form.experience.trim(),
                 channels,
                 verification_status: 'pending',
                 source: 'website',
                 consent_at: serverTimestamp(),
-                authMethod: user.providerData[0]?.providerId || 'password',
+                authMethod: viaPhone ? 'phone' : 'google',
                 reference,
-                emailVerified: true,
                 uid: user.uid,
                 createdAt: serverTimestamp()
               });
@@ -294,7 +536,7 @@ export default function Register() {
               console.error('Registration submit failed:', err.code, err.message);
               setError(
                 err.code === 'permission-denied'
-                  ? 'Your session needs a refresh. Please sign out, sign in again, and resubmit.'
+                  ? 'Your session needs a refresh. Please sign out, confirm your number again, and resubmit.'
                   : 'Could not submit registration. Please check your connection and try again.'
               );
             } finally {
@@ -304,112 +546,10 @@ export default function Register() {
         >
           <div className="form-grid">
             <label>
-              Full name *
-              <input
-                name="name"
-                required
-                placeholder="Dr. Full Name"
-                value={form.name}
-                onChange={update}
-                data-testid="doctor-full-name"
-              />
-            
-              {errors.name && (
-                <small className="field-error" role="alert">{errors.name}</small>
-              )}
-              </label>
-
-            <label>
-              Phone number *
-              <div className="phone-row">
-                <input
-                  className="dial-code"
-                  name="dialCode"
-                  required
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="+91"
-                  value={form.dialCode}
-                  onChange={update}
-                  aria-label="Country calling code"
-                  data-testid="doctor-dial-code"
-                />
-                <input
-                  name="phone"
-                  required
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder={inIndia ? 'XXXXXXXXXX' : 'Number without the country code'}
-                  value={form.phone}
-                  onChange={update}
-                  data-testid="doctor-phone"
-                />
-              </div>
-              {errors.phone ? (
-                <small className="field-error" role="alert">{errors.phone}</small>
-              ) : (
-                <small className="field-hint">
-                  {inIndia
-                    ? '10-digit mobile number.'
-                    : 'Enter the number without the leading zero, e.g. +971 50 123 4567.'}
-                </small>
-              )}
-            </label>
-
-            <label>
-              Specialty / Category *
-              <select
-                name="specialty"
-                required
-                value={form.specialty}
-                onChange={update}
-                data-testid="doctor-specialty"
-              >
-                <option value="">Select specialty</option>
-                <option>General Physician</option>
-                <option>Ayurveda</option>
-                <option>Orthopedic</option>
-                <option>Cardiology</option>
-                <option>Dermatology</option>
-                <option>Gynecology</option>
-                <option>Pediatrics</option>
-                <option>Dentistry</option>
-                <option>Physiotherapy</option>
-                <option>Nurse</option>
-                <option>Other</option>
-              </select>
-            
-              {errors.specialty && (
-                <small className="field-error" role="alert">{errors.specialty}</small>
-              )}
-              </label>
-
-            {form.specialty === 'Other' && (
-              <label>
-                Which specialisation? *
-                <input
-                  name="specialtyOther"
-                  required
-                  maxLength={80}
-                  placeholder="e.g., Ophthalmology"
-                  value={form.specialtyOther}
-                  onChange={update}
-                  data-testid="doctor-specialty-other"
-                />
-              
-              {errors.specialtyOther && (
-                <small className="field-error" role="alert">{errors.specialtyOther}</small>
-              )}
-              </label>
-            )}
-
-            <label>
               Country of practice *
               <select
-                name="country"
-                required
-                value={form.country}
-                onChange={update}
+                value={country}
+                onChange={(e) => changeCountry(e.target.value)}
                 data-testid="doctor-country"
               >
                 {PRIORITY_COUNTRIES.map((name) => (
@@ -427,31 +567,118 @@ export default function Register() {
             </label>
 
             <label>
+              Full name *
+              <input
+                name="name"
+                placeholder="Dr. Full Name"
+                value={form.name}
+                onChange={update}
+                data-testid="doctor-full-name"
+              />
+              {errors.name && <small className="field-error" role="alert">{errors.name}</small>}
+            </label>
+
+            {viaGoogle ? (
+              <label>
+                Mobile number *
+                <div className="phone-row">
+                  <input
+                    className="dial-code"
+                    type="tel"
+                    inputMode="numeric"
+                    value={dialCode}
+                    onChange={(e) => setDialCode(`+${e.target.value.replace(/\D/g, '').slice(0, 4)}`)}
+                    aria-label="Country calling code"
+                    data-testid="doctor-dial-code"
+                  />
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    placeholder={inIndia ? 'XXXXXXXXXX' : 'Number without the country code'}
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value.replace(/[^\d\s-]/g, ''));
+                      if (errors.phone) setErrors((prev) => ({ ...prev, phone: '' }));
+                    }}
+                    data-testid="doctor-phone"
+                  />
+                </div>
+                {errors.phone && <small className="field-error" role="alert">{errors.phone}</small>}
+              </label>
+            ) : (
+              <label>
+                Email address
+                <input
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="Optional, for updates"
+                  value={form.email}
+                  onChange={update}
+                  data-testid="doctor-email"
+                />
+                {errors.email && <small className="field-error" role="alert">{errors.email}</small>}
+              </label>
+            )}
+
+            <label>
+              Specialty / Category *
+              <select
+                name="specialty"
+                value={form.specialty}
+                onChange={update}
+                data-testid="doctor-specialty"
+              >
+                <option value="">Select specialty</option>
+                <option>General Physician</option>
+                <option>Ayurveda</option>
+                <option>Orthopedic</option>
+                <option>Cardiology</option>
+                <option>Dermatology</option>
+                <option>Gynecology</option>
+                <option>Pediatrics</option>
+                <option>Dentistry</option>
+                <option>Physiotherapy</option>
+                <option>Nurse</option>
+                <option>Other</option>
+              </select>
+              {errors.specialty && <small className="field-error" role="alert">{errors.specialty}</small>}
+            </label>
+
+            {form.specialty === 'Other' && (
+              <label>
+                Which specialisation? *
+                <input
+                  name="specialtyOther"
+                  maxLength={80}
+                  placeholder="e.g., Ophthalmology"
+                  value={form.specialtyOther}
+                  onChange={update}
+                  data-testid="doctor-specialty-other"
+                />
+                {errors.specialtyOther && (
+                  <small className="field-error" role="alert">{errors.specialtyOther}</small>
+                )}
+              </label>
+            )}
+
+            <label>
               City *
               <input
                 name="city"
-                required
                 placeholder="Your city"
                 value={form.city}
                 onChange={update}
                 data-testid="doctor-city"
               />
-            
-              {errors.city && (
-                <small className="field-error" role="alert">{errors.city}</small>
-              )}
-              </label>
+              {errors.city && <small className="field-error" role="alert">{errors.city}</small>}
+            </label>
 
             <label>
               {inIndia ? 'State / Union Territory *' : 'State / Region *'}
               {inIndia ? (
-                <select
-                  name="state"
-                  required
-                  value={form.state}
-                  onChange={update}
-                  data-testid="doctor-state"
-                >
+                <select name="state" value={form.state} onChange={update} data-testid="doctor-state">
                   <option value="">Select state</option>
                   <optgroup label="States">
                     {INDIA_STATES.map((st) => (
@@ -467,32 +694,42 @@ export default function Register() {
               ) : (
                 <input
                   name="state"
-                  required
                   placeholder="e.g., Dubai"
                   value={form.state}
                   onChange={update}
                   data-testid="doctor-state"
                 />
               )}
-              {errors.state && (
-                <small className="field-error" role="alert">{errors.state}</small>
-              )}
+              {errors.state && <small className="field-error" role="alert">{errors.state}</small>}
+            </label>
+
+            <label>
+              {inIndia ? 'PIN code *' : 'Postal code'}
+              <input
+                name="pincode"
+                inputMode="numeric"
+                maxLength={inIndia ? 6 : 12}
+                autoComplete="postal-code"
+                placeholder={inIndia ? '411001' : 'Optional'}
+                value={form.pincode}
+                onChange={update}
+                data-testid="doctor-pincode"
+              />
+              {errors.pincode && <small className="field-error" role="alert">{errors.pincode}</small>}
             </label>
 
             <label>
               Years of experience
               <input
                 name="experience"
+                inputMode="numeric"
                 placeholder="e.g., 8"
                 value={form.experience}
                 onChange={update}
                 data-testid="doctor-experience"
               />
-            
-              {errors.experience && (
-                <small className="field-error" role="alert">{errors.experience}</small>
-              )}
-              </label>
+              {errors.experience && <small className="field-error" role="alert">{errors.experience}</small>}
+            </label>
           </div>
 
           <div className="channel-box">
@@ -523,15 +760,12 @@ export default function Register() {
               />
               Home Visit{!inIndia && ' (India only)'}
             </label>
-            {errors.channels && (
-              <small className="field-error" role="alert">{errors.channels}</small>
-            )}
+            {errors.channels && <small className="field-error" role="alert">{errors.channels}</small>}
           </div>
 
           <label className="check-label consent">
             <input
               type="checkbox"
-              required
               checked={consent}
               onChange={(e) => {
                 setConsent(e.target.checked);
@@ -539,8 +773,8 @@ export default function Register() {
               }}
               data-testid="doctor-consent"
             />{' '}
-            I agree to the{' '}
-            <Link to="/privacy">Privacy Policy</Link> and Terms and consent to Charak processing my data.
+            I agree to the <Link to="/privacy">Privacy Policy</Link> and Terms and consent to Charak
+            processing my data.
           </label>
           {errors.consent && (
             <small className="field-error consent-error" role="alert">{errors.consent}</small>

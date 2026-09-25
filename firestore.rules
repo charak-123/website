@@ -13,23 +13,32 @@ service cloud.firestore {
     // doctor cannot create duplicates and can read back their own submission.
     match /doctors/{docId} {
       allow create: if request.auth != null
-        // the address must actually be confirmed — the doctor has to click the
-        // link in the verification email first
-        && request.auth.token.email_verified == true
         && docId == request.auth.uid
+
+        // A doctor gets in by confirming an SMS code or through Google, and
+        // whichever identifier the token carries has to be the one stored:
+        // the other is typed in and merely claimed.
+        && (
+             (request.auth.token.phone_number is string
+               && request.resource.data.phone == request.auth.token.phone_number)
+             ||
+             (request.auth.token.email_verified == true
+               && request.resource.data.email == request.auth.token.email)
+           )
+
         && request.resource.data.keys().hasAll([
-             'name', 'phone', 'specialty', 'city', 'state', 'channels',
+             'name', 'phone', 'specialty', 'country', 'city', 'state', 'channels',
              'verification_status', 'source', 'consent_at', 'createdAt'
            ])
-        // the submission must be attributed to the account that is signed in
         && request.resource.data.uid == request.auth.uid
+
         // nobody gets to mark themselves approved from the client
         && request.resource.data.verification_status == 'pending'
         && request.resource.data.source == 'website'
+
         && request.resource.data.name is string
         && request.resource.data.name.size() > 1
         && request.resource.data.name.size() < 120
-        // stored in E.164 so the app can join on it at OTP login (PRD §8)
         && request.resource.data.phone is string
         && request.resource.data.phone.size() > 7
         && request.resource.data.phone.size() < 20

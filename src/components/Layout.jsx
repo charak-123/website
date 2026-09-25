@@ -7,9 +7,9 @@ export default function Layout({ children, onWaitlist }) {
   const [open, setOpen] = useState(false);
   const { user, ready, signOut } = useAuth();
   const { pathname } = useLocation();
-  // The auth page carries its own identity; a "Sign in" button on top of it
-  // would just be noise.
-  const onAuthPage = pathname === '/signin' || pathname === '/signup';
+  // The register page opens with the sign-in step, so a second prompt to sign
+  // in would just be noise on top of it.
+  const onAuthPage = pathname.startsWith('/register');
 
   return (
     <div className="site-shell">
@@ -55,12 +55,12 @@ export default function Layout({ children, onWaitlist }) {
                 }}
                 data-testid="nav-mobile-sign-out"
               >
-                Sign out ({user.email})
+                Sign out ({user.phoneNumber})
               </button>
             ) : (
               <Link
                 className="nav-mobile-only"
-                to="/signin"
+                to="/register"
                 onClick={() => setOpen(false)}
                 data-testid="nav-mobile-sign-in"
               >
@@ -76,14 +76,14 @@ export default function Layout({ children, onWaitlist }) {
             {ready && user ? (
               <span className="nav-account" data-testid="nav-account">
                 <UserRound size={14} />
-                <span className="nav-account-email">{user.email}</span>
+                <span className="nav-account-email">{user.phoneNumber}</span>
                 <button className="link-btn" onClick={() => signOut()} data-testid="nav-sign-out">
                   Sign out
                 </button>
               </span>
             ) : (
               !onAuthPage && (
-                <Link className="text-btn nav-signin" to="/signin" data-testid="nav-sign-in">
+                <Link className="text-btn nav-signin" to="/register" data-testid="nav-sign-in">
                   Doctor sign in
                 </Link>
               )

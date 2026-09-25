@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 export default function RegisterSuccess() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, ready, isVerified } = useAuth();
+  const { user, ready } = useAuth();
 
   // Set by the form on submit; absent when someone returns to this URL later,
   // in which case we read their record back instead.
@@ -28,7 +28,7 @@ export default function RegisterSuccess() {
 
   useEffect(() => {
     let cancelled = false;
-    if (justSubmitted || !user || !isVerified) return undefined;
+    if (justSubmitted || !user?.phoneNumber) return undefined;
     (async () => {
       try {
         const snap = await getDoc(doc(db, 'doctors', user.uid));
@@ -42,7 +42,7 @@ export default function RegisterSuccess() {
     return () => {
       cancelled = true;
     };
-  }, [justSubmitted, user, isVerified]);
+  }, [justSubmitted, user]);
 
   if (!ready || loading) {
     return (
@@ -52,7 +52,7 @@ export default function RegisterSuccess() {
     );
   }
 
-  if (!user || !isVerified) return <Navigate to="/signin?next=/register" replace />;
+  if (!user?.phoneNumber) return <Navigate to="/register" replace />;
   // Nothing submitted and nothing on file — send them to the form.
   if (!justSubmitted && !record) return <Navigate to="/register" replace />;
 
