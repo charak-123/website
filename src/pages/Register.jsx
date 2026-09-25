@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { COUNTRIES, DIAL_BY_COUNTRY, PRIORITY_COUNTRIES } from '../data/countries';
+import { INDIA_STATES, INDIA_UNION_TERRITORIES } from '../data/indiaStates';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -66,6 +67,9 @@ export default function Register() {
       setForm({
         ...form,
         country: value,
+        // A state picked from the Indian list means nothing once the country
+        // changes, and vice versa.
+        state: '',
         // The dial code follows the country the doctor practises in; they can
         // still override it below for a number registered elsewhere.
         dialCode: `+${DIAL_BY_COUNTRY[value] || ''}`
@@ -439,20 +443,41 @@ export default function Register() {
               </label>
 
             <label>
-              State / Region *
-              <input
-                name="state"
-                required
-                placeholder={inIndia ? 'e.g., Maharashtra' : 'e.g., Dubai'}
-                value={form.state}
-                onChange={update}
-                data-testid="doctor-state"
-              />
-            
+              {inIndia ? 'State / Union Territory *' : 'State / Region *'}
+              {inIndia ? (
+                <select
+                  name="state"
+                  required
+                  value={form.state}
+                  onChange={update}
+                  data-testid="doctor-state"
+                >
+                  <option value="">Select state</option>
+                  <optgroup label="States">
+                    {INDIA_STATES.map((st) => (
+                      <option key={st}>{st}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Union Territories">
+                    {INDIA_UNION_TERRITORIES.map((ut) => (
+                      <option key={ut}>{ut}</option>
+                    ))}
+                  </optgroup>
+                </select>
+              ) : (
+                <input
+                  name="state"
+                  required
+                  placeholder="e.g., Dubai"
+                  value={form.state}
+                  onChange={update}
+                  data-testid="doctor-state"
+                />
+              )}
               {errors.state && (
                 <small className="field-error" role="alert">{errors.state}</small>
               )}
-              </label>
+            </label>
 
             <label>
               Years of experience

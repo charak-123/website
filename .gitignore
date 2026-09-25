@@ -33,3 +33,8 @@ pnpm-debug.log*
 # Extraction temp files
 all_css_chunks.css
 css_chunk_*.css
+
+# Firebase admin credentials and data exports — never commit these
+serviceAccountKey.json
+*-serviceAccountKey.json
+exports/

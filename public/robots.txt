@@ -1,4 +1,4 @@
-# charak.care
+# www.charak.care
 User-agent: *
 Allow: /
 
@@ -8,4 +8,4 @@ Disallow: /register/success
 Disallow: /signin
 Disallow: /signup
 
-Sitemap: https://charak.care/sitemap.xml
+Sitemap: https://www.charak.care/sitemap.xml

@@ -18,15 +18,15 @@ registered is not the same as being listed — listing follows verification.
 
 ## Pages
 
-- [Home](https://charak.care/): What Charak is, how it works, value for doctors, and FAQ.
-- [Doctor registration](https://charak.care/register): Registration for qualified practitioners. Requires a Charak account with a confirmed email address.
-- [Contact](https://charak.care/contact): Support and grievance contact, including the response SLA for data requests.
+- [Home](https://www.charak.care/): What Charak is, how it works, value for doctors, and FAQ.
+- [Doctor registration](https://www.charak.care/register): Registration for qualified practitioners. Requires a Charak account with a confirmed email address.
+- [Contact](https://www.charak.care/contact): Support and grievance contact, including the response SLA for data requests.
 
 ## Legal
 
-- [Privacy Policy](https://charak.care/privacy): What is collected, why, and the rights available under India's Digital Personal Data Protection Act, 2023.
-- [Terms of Service](https://charak.care/terms): Eligibility, the manual verification process, and the limits of registration.
-- [Medical Disclaimer](https://charak.care/disclaimer): The boundary between the platform and clinical care, and what Charak is not for.
+- [Privacy Policy](https://www.charak.care/privacy): What is collected, why, and the rights available under India's Digital Personal Data Protection Act, 2023.
+- [Terms of Service](https://www.charak.care/terms): Eligibility, the manual verification process, and the limits of registration.
+- [Medical Disclaimer](https://www.charak.care/disclaimer): The boundary between the platform and clinical care, and what Charak is not for.
 
 ## Notes
 
