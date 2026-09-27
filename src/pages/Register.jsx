@@ -141,15 +141,16 @@ export default function Register() {
     }
   };
 
-  const submitCode = async () => {
-    if (code.trim().length !== 6) {
+  const submitCode = async (typed) => {
+    const entered = (typeof typed === 'string' ? typed : code).trim();
+    if (entered.length !== 6) {
       setOtpError('Please enter the 6-digit code we sent you.');
       return;
     }
     setCheckingCode(true);
     setOtpError('');
     try {
-      await confirmCode(confirmation, code.trim());
+      await confirmCode(confirmation, entered);
       setConfirmation(null);
       setCode('');
     } catch (err) {
@@ -169,6 +170,33 @@ export default function Register() {
       setCheckingCode(false);
     }
   };
+
+  // Android Chrome can hand us the code straight out of the SMS, so the doctor
+  // never leaves the page to go read it. It only fires when the message ends
+  // with "@www.charak.care #123456", and Firebase's template puts the code
+  // first and the domain last, so today this never resolves and the field
+  // stays manual — it is waiting on us sending our own SMS, not broken.
+  // Everywhere else (iOS, desktop) the API is absent and this is a no-op.
+  useEffect(() => {
+    if (!confirmation) return undefined;
+    if (typeof window === 'undefined' || !('OTPCredential' in window)) return undefined;
+    const abort = new AbortController();
+    navigator.credentials
+      .get({ otp: { transport: ['sms'] }, signal: abort.signal })
+      .then((cred) => {
+        const sms = cred?.code?.replace(/\D/g, '').slice(0, 6);
+        if (!sms || sms.length !== 6) return;
+        setCode(sms);
+        setOtpError('');
+        submitCode(sms);
+      })
+      .catch(() => {
+        // Aborted, dismissed, or unsupported: the typed code still works.
+      });
+    return () => abort.abort();
+    // Re-armed whenever a fresh code is on its way.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmation]);
 
   const update = (e) => {
     const { name, value } = e.target;
@@ -396,8 +424,12 @@ export default function Register() {
                     autoComplete="one-time-code"
                     value={code}
                     onChange={(e) => {
-                      setCode(e.target.value.replace(/\D/g, '').slice(0, 6));
+                      const next = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setCode(next);
                       if (otpError) setOtpError('');
+                      // The iOS keyboard's one-time-code suggestion, and a paste,
+                      // both land all six at once: confirm without a second tap.
+                      if (next.length === 6 && code.length < 6 && !checkingCode) submitCode(next);
                     }}
                     data-testid="otp-code"
                   />
