@@ -27,7 +27,8 @@ const PREFERRED_COLUMNS = {
   doctors: [
     'id', 'createdAt', 'reference', 'name', 'email', 'phone', 'dialCode',
     'phoneLocal', 'specialty', 'specialtyOther', 'experience', 'country',
-    'city', 'state', 'channels', 'verification_status', 'source',
+    'city', 'state', 'channels', 'licenceNumber', 'verification_doc_url',
+    'verification_doc_name', 'verification_status', 'source',
     'authMethod', 'emailVerified', 'consent_at', 'uid'
   ],
   waitlist: ['id', 'createdAt', 'email']

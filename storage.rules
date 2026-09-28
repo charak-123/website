@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // A doctor's verification document. The path carries their uid, so each
+    // one can only ever write into their own folder, and the file has to look
+    // like what the form asks for: a PDF or an image, 10MB at most.
+    match /verification_docs/{uid}/{fileName} {
+      allow write: if request.auth != null
+        && uid == request.auth.uid
+        && request.resource.size < 10 * 1024 * 1024
+        && (
+             request.resource.contentType == 'application/pdf'
+             || request.resource.contentType.matches('image/(jpeg|png|heic|heif)')
+           );
+
+      // Reading back is how the doctor confirms what they sent; our team
+      // reads these with the Admin SDK, which rules do not apply to.
+      allow read: if request.auth != null && uid == request.auth.uid;
+
+      // Corrections go through us, the same as the registration itself.
+      allow delete: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

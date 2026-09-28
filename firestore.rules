@@ -28,7 +28,8 @@ service cloud.firestore {
 
         && request.resource.data.keys().hasAll([
              'name', 'phone', 'specialty', 'country', 'city', 'state', 'channels',
-             'verification_status', 'source', 'consent_at', 'createdAt'
+             'licenceNumber', 'verification_doc_url', 'verification_status',
+             'source', 'consent_at', 'createdAt'
            ])
         && request.resource.data.uid == request.auth.uid
 
@@ -45,7 +46,17 @@ service cloud.firestore {
         && request.resource.data.city is string
         && request.resource.data.city.size() < 100
         && request.resource.data.state is string
-        && request.resource.data.state.size() < 100;
+        && request.resource.data.state.size() < 100
+
+        // The certificate has to be a real upload of theirs, not a link to
+        // somewhere else, and the council number has to be filled in.
+        && request.resource.data.licenceNumber is string
+        && request.resource.data.licenceNumber.size() > 4
+        && request.resource.data.licenceNumber.size() < 31
+        && request.resource.data.verification_doc_url is string
+        && request.resource.data.verification_doc_path is string
+        && request.resource.data.verification_doc_path
+             .matches('verification_docs/' + request.auth.uid + '/.*');
 
       // A doctor may read back their own record — this is what tells someone
       // who forgot whether they registered that we already have their details.

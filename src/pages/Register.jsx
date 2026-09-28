@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { ShieldCheck, ArrowRight, Check, LogOut, MessageSquare } from 'lucide-react';
+import { ShieldCheck, ArrowRight, Check, LogOut, MessageSquare, Upload, FileText, X } from 'lucide-react';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { db, storage } from '../firebase';
 import { useAuth, authMessage } from '../context/AuthContext';
 import { COUNTRIES, DIAL_BY_COUNTRY, PRIORITY_COUNTRIES } from '../data/countries';
 import { INDIA_STATES, INDIA_UNION_TERRITORIES } from '../data/indiaStates';
@@ -47,9 +48,31 @@ export default function Register() {
     city: '',
     state: '',
     pincode: '',
-    experience: ''
+    experience: '',
+    licenceNumber: ''
   });
   const [channels, setChannels] = useState({ online: false, home: false });
+  // The verification certificate: held in memory until the form is submitted,
+  // so an abandoned registration leaves nothing behind in storage.
+  const [certificate, setCertificate] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  const CERT_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif'];
+  const CERT_MAX_BYTES = 10 * 1024 * 1024;
+
+  const chooseCertificate = (file) => {
+    if (!file) return;
+    if (!CERT_TYPES.includes(file.type)) {
+      setErrors((prev) => ({ ...prev, certificate: 'Please upload a PDF, JPG or PNG.' }));
+      return;
+    }
+    if (file.size > CERT_MAX_BYTES) {
+      setErrors((prev) => ({ ...prev, certificate: 'That file is over 10MB. Please upload a smaller scan.' }));
+      return;
+    }
+    setErrors((prev) => ({ ...prev, certificate: '' }));
+    setCertificate(file);
+  };
 
   const inIndia = country === 'India';
 
@@ -263,6 +286,14 @@ export default function Register() {
     if (exp && !/^\d{1,2}$/.test(exp)) next.experience = 'Enter years as a number, e.g. 8.';
     else if (exp && Number(exp) > 60) next.experience = 'Please enter 60 or fewer years.';
 
+    const licence = form.licenceNumber.trim();
+    if (!licence) next.licenceNumber = 'Please enter your medical registration number.';
+    else if (!/^[A-Za-z0-9/\-. ]{5,30}$/.test(licence)) {
+      next.licenceNumber = 'Use 5–30 letters, digits or / - . only.';
+    }
+
+    if (!certificate) next.certificate = 'Please upload your degree or registration certificate.';
+
     if (!hasChannel) next.channels = 'Choose at least one channel.';
     if (!consent) next.consent = 'Please accept the Privacy Policy and Terms to continue.';
     return next;
@@ -278,6 +309,8 @@ export default function Register() {
     state: 'doctor-state',
     pincode: 'doctor-pincode',
     experience: 'doctor-experience',
+    licenceNumber: 'doctor-licence',
+    certificate: 'doctor-certificate',
     channels: 'channel-online',
     consent: 'doctor-consent'
   };
@@ -532,6 +565,16 @@ export default function Register() {
             setSubmitting(true);
             setError('');
             try {
+              // The document goes up first: a registration without its
+              // certificate is not one our team can act on, so a failed
+              // upload has to stop the whole submission.
+              setUploading(true);
+              const safeName = certificate.name.replace(/[^A-Za-z0-9.\-_]/g, '_').slice(-80);
+              const certRef = ref(storage, `verification_docs/${user.uid}/${Date.now()}-${safeName}`);
+              await uploadBytes(certRef, certificate, { contentType: certificate.type });
+              const verificationDocUrl = await getDownloadURL(certRef);
+              setUploading(false);
+
               const reference = `CHR-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
               // Keyed by uid so one account cannot register twice. Field names
               // mirror the app's schema so launch is a status change, not a
@@ -551,6 +594,10 @@ export default function Register() {
                 state: form.state.trim(),
                 pincode: form.pincode.trim(),
                 experience: form.experience.trim(),
+                licenceNumber: form.licenceNumber.trim(),
+                verification_doc_url: verificationDocUrl,
+                verification_doc_path: certRef.fullPath,
+                verification_doc_name: certificate.name,
                 channels,
                 verification_status: 'pending',
                 source: 'website',
@@ -566,12 +613,21 @@ export default function Register() {
               });
             } catch (err) {
               console.error('Registration submit failed:', err.code, err.message);
+              if (err.code && err.code.startsWith('storage/')) {
+                setError(
+                  err.code === 'storage/unauthorized'
+                    ? 'That file was refused. Please upload a PDF, JPG or PNG under 10MB.'
+                    : 'Could not upload your certificate. Please check your connection and try again.'
+                );
+                return;
+              }
               setError(
                 err.code === 'permission-denied'
                   ? 'Your session needs a refresh. Please sign out, confirm your number again, and resubmit.'
                   : 'Could not submit registration. Please check your connection and try again.'
               );
             } finally {
+              setUploading(false);
               setSubmitting(false);
             }
           }}
@@ -762,6 +818,64 @@ export default function Register() {
               />
               {errors.experience && <small className="field-error" role="alert">{errors.experience}</small>}
             </label>
+
+            <label>
+              Medical registration number *
+              <input
+                name="licenceNumber"
+                maxLength={30}
+                placeholder="e.g., MH/12345/2011"
+                value={form.licenceNumber}
+                onChange={update}
+                data-testid="doctor-licence"
+              />
+              <small className="field-hint">As printed on your council registration.</small>
+              {errors.licenceNumber && (
+                <small className="field-error" role="alert">{errors.licenceNumber}</small>
+              )}
+            </label>
+          </div>
+
+          <div className="upload-box">
+            <b>Degree or registration certificate *</b>
+            <p>
+              One file — your council registration or degree certificate. PDF, JPG or PNG, up to
+              10MB. Only our verification team sees it.
+            </p>
+            {certificate ? (
+              <div className="upload-chosen" data-testid="certificate-chosen">
+                <FileText size={15} />
+                <span className="upload-name">{certificate.name}</span>
+                <small>{(certificate.size / (1024 * 1024)).toFixed(1)} MB</small>
+                <button
+                  type="button"
+                  className="link-btn"
+                  onClick={() => setCertificate(null)}
+                  aria-label="Remove the selected file"
+                  data-testid="certificate-remove"
+                >
+                  <X size={13} /> Remove
+                </button>
+              </div>
+            ) : (
+              <label className="upload-drop">
+                <Upload size={15} />
+                <span>Choose a file</span>
+                <input
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png,image/heic,image/heif"
+                  onChange={(e) => {
+                    chooseCertificate(e.target.files?.[0]);
+                    // So picking the same file again after a removal still fires.
+                    e.target.value = '';
+                  }}
+                  data-testid="doctor-certificate"
+                />
+              </label>
+            )}
+            {errors.certificate && (
+              <small className="field-error" role="alert">{errors.certificate}</small>
+            )}
           </div>
 
           <div className="channel-box">
@@ -818,7 +932,11 @@ export default function Register() {
             disabled={submitting}
             data-testid="submit-doctor-registration"
           >
-            {submitting ? 'Submitting…' : <>Submit Registration <ArrowRight size={16} /></>}
+            {uploading
+              ? 'Uploading certificate…'
+              : submitting
+                ? 'Submitting…'
+                : <>Submit Registration <ArrowRight size={16} /></>}
           </button>
 
           {error && (

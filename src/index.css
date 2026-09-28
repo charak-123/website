@@ -165,3 +165,16 @@ a {
 .verify-foot{margin:18px 0 0;padding-top:15px;border-top:1px solid var(--line);font-size:11px;line-height:1.6;color:var(--muted)}
 .otp-actions{display:flex;justify-content:space-between;gap:16px;margin-top:12px;flex-wrap:wrap}
 @media(max-width:800px){.verify-card{padding:18px}.stepper li+li:before{width:12px}}
+
+/* Verification certificate upload in the doctor registration form */
+.upload-box{margin-top:24px;border:1px solid var(--line);padding:16px}
+.upload-box b{font-size:11px}
+.upload-box p{margin:4px 0 14px;font-size:10px;line-height:1.6;color:var(--muted)}
+.upload-drop{display:flex!important;align-items:center;justify-content:center;gap:9px;margin:0!important;padding:18px;border:1px dashed #a9c3d6;background:var(--pale);color:#4a8ac2;font-size:11.5px;font-weight:700;cursor:pointer;transition:border-color .2s,background .2s}
+.upload-drop:hover{border-color:#508fbd;background:#eaf4fb}
+.upload-drop input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.upload-chosen{display:flex;align-items:center;gap:9px;padding:12px 13px;background:#f2faf6;border:1px solid #cfe8dc;font-size:11.5px;color:#2f6a4d}
+.upload-chosen .upload-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink);font-weight:700}
+.upload-chosen small{color:var(--muted);white-space:nowrap}
+.upload-chosen .link-btn{display:inline-flex;align-items:center;gap:4px}
+.upload-box .field-error{margin-top:11px}
