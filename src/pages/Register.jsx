@@ -519,7 +519,7 @@ export default function Register() {
     );
   }
 
-  // ---- Stage 2: the details ---------------------------------------------
+  // ---- Stage 2: the details, as a popup over the verified step ----------
   return (
     <div className="register-page">
       {aside}
@@ -531,6 +531,18 @@ export default function Register() {
           </Link>
         </div>
         {steps}
+      </div>
+
+      <div className="modal-backdrop" role="presentation">
+      <div className="modal modal-wide" role="dialog" aria-modal="true" data-testid="doctor-details-modal">
+        <button
+          className="modal-close"
+          onClick={() => signOut()}
+          aria-label="Close and sign out"
+          data-testid="close-doctor-details-modal"
+        >
+          <X />
+        </button>
 
         <div className="signed-in-bar" data-testid="signed-in-bar">
           <span className="account-badge">
@@ -945,6 +957,7 @@ export default function Register() {
             </small>
           )}
         </form>
+      </div>
       </div>
     </div>
   );
