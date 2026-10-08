@@ -28,7 +28,13 @@ export default function RegisterSuccess() {
 
   useEffect(() => {
     let cancelled = false;
-    if (justSubmitted || !user?.phoneNumber) return undefined;
+    if (justSubmitted || !ready) return undefined;
+    // Signed out: nothing to look up, the redirect below takes over.
+    if (!user) {
+      setLoading(false);
+      return undefined;
+    }
+    setLoading(true);
     (async () => {
       try {
         const snap = await getDoc(doc(db, 'doctors', user.uid));
@@ -42,7 +48,7 @@ export default function RegisterSuccess() {
     return () => {
       cancelled = true;
     };
-  }, [justSubmitted, user]);
+  }, [justSubmitted, ready, user]);
 
   if (!ready || loading) {
     return (
@@ -52,7 +58,8 @@ export default function RegisterSuccess() {
     );
   }
 
-  if (!user?.phoneNumber) return <Navigate to="/register" replace />;
+  // Phone and Google sign-ins both count — a Google account has no number.
+  if (!user) return <Navigate to="/register" replace />;
   // Nothing submitted and nothing on file — send them to the form.
   if (!justSubmitted && !record) return <Navigate to="/register" replace />;
 
