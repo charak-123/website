@@ -26,6 +26,7 @@ export default function App() {
             <Route path="/signup" element={<Navigate to="/register" replace />} />
             <Route path="/privacy" element={<Legal type="privacy" />} />
             <Route path="/terms" element={<Legal type="terms" />} />
+            <Route path="/telemedicine" element={<Legal type="telemedicine" />} />
             <Route path="/disclaimer" element={<Legal type="disclaimer" />} />
             <Route path="/contact" element={<Contact />} />
           </Routes>

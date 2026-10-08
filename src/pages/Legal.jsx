@@ -2,21 +2,38 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 // TODO(legal): fill these in before launch — they are required by the DPDP Act 2023
-// and the IT Rules 2021, and Google's OAuth verification checks for them.
+// and the IT Rules 2021, and Google's OAuth verification and the app stores check
+// for them. The whole text still needs review by a lawyer before publication.
 const ENTITY = {
   name: '[Legal entity name, e.g. Charak Health Technologies Pvt. Ltd.]',
   address: '[Registered office address]',
   grievanceOfficer: '[Grievance Officer name]',
   email: 'upcharchikitsa@gmail.com',
-  effectiveDate: '10 September 2026'
+  jurisdiction: '[city of jurisdiction]',
+  effectiveDate: '10 October 2026'
 };
 
 const P = (text) => ({ type: 'p', text });
 const UL = (items) => ({ type: 'ul', items });
 
+const grievanceSection = {
+  h: 'Grievance Officer',
+  body: [
+    P(
+      'In line with the DPDP Act and the Information Technology (Intermediary Guidelines) Rules, 2021, you can reach our Grievance Officer at:'
+    ),
+    UL([
+      `Name: ${ENTITY.grievanceOfficer}`,
+      `Email: ${ENTITY.email}`,
+      `Address: ${ENTITY.address}`,
+      'We acknowledge complaints within 24 hours and resolve them within 30 days.'
+    ])
+  ]
+};
+
 const privacy = {
   intro:
-    'This policy explains what we collect when you join our waitlist or register as a doctor, why we collect it, and the control you have over it. We have tried to write it in plain language rather than legalese.',
+    'This policy explains what we collect through the Charak website, the Charak patient app and the Charak doctor app, why we collect it, and the control you have over it. We have tried to write it in plain language rather than legalese.',
   sections: [
     {
       h: 'Who is responsible for your data',
@@ -31,15 +48,16 @@ const privacy = {
     {
       h: 'What we collect',
       body: [
-        P('We only collect what we actually need. Today that is:'),
+        P('We only collect what we actually need to run the service:'),
         UL([
-          'Waitlist: your email address and the time you joined.',
-          'Doctor registration: your full name, mobile number, specialty or category, the country, state, city and PIN code of where you practise, years of experience (optional), an email address if you choose to give one, and the consultation channels you prefer (online consult and/or home visit).',
-          'Account details: your account is either your mobile number or your Google account. If you use your number, we store it once you have confirmed it with the code we text you. If you continue with Google, we receive your name, email address, and Google account identifier — we never receive your Google password. Either way, we do not set or store a password.',
-          'Technical records: standard server logs and timestamps generated when you use the site.'
+          'Your account: you sign in with your Google account, so we receive your name, email address and Google account identifier — never your Google password. We also store your mobile number once you give it to us, so the doctor or patient on a booking can reach you.',
+          'If you are a patient: the addresses you save for home visits and their map location (used to check an address is inside a doctor\'s service area); the symptom information you share before a consultation — text, photos, video and voice notes, and the text transcript of those voice notes; and your bookings, payments, ratings and complaints.',
+          'If you are a doctor: your name, specialty, licence or registration number, verification documents and certificates, years of experience, the area you serve and your base location, your prices and availability, the bank or UPI details we pay you to, and the ratings patients give you.',
+          'Website registration and waitlist: what you enter on the registration form or the waitlist — your name, mobile number, specialty, where you practise, an optional email address and the consultation channels you prefer.',
+          'Technical records: a device token so we can send you notifications, and standard server logs, IP addresses and timestamps generated when you use the website or the apps.'
         ]),
         P(
-          'We do not collect medical records, patient data, government ID documents, or payment information through this website.'
+          'We do not receive or store your card or bank details when you pay — payments are handled entirely by our payment processor. We do not record video calls. We do not use advertising or third-party tracking tools in the apps or on the website.'
         )
       ]
     },
@@ -47,10 +65,14 @@ const privacy = {
       h: 'Why we collect it',
       body: [
         UL([
-          'To verify that you are a qualified practitioner before listing you on the Charak network.',
-          'To contact you about your registration status and about the launch of the Charak app.',
-          'To pre-fill your profile in the Charak app so you do not have to enter the same details twice.',
-          'To keep the service secure and to prevent fraudulent or duplicate registrations.'
+          'To create and run your account.',
+          'To verify that doctors are qualified practitioners before they are listed.',
+          'To match patients with doctors, and to run online consultations and home visits.',
+          'To take payments, issue refunds and pay doctors.',
+          'To turn a patient\'s voice notes into text so the doctor can read them before the consultation.',
+          'To send you notifications about your bookings, and to handle complaints.',
+          'To meet our legal, tax and medical-record obligations.',
+          'To keep the service secure and to prevent fraud and duplicate accounts.'
         ]),
         P(
           'We do not use your data for advertising, and we do not build advertising profiles from it.'
@@ -58,13 +80,21 @@ const privacy = {
       ]
     },
     {
+      h: 'Health information',
+      body: [
+        P(
+          'The symptom information a patient shares is sensitive, and we treat it that way. It is shared only with the doctor on that booking and with the few members of our team who need it to run the service — for example, to investigate a complaint. It is never used for advertising or sold.'
+        )
+      ]
+    },
+    {
       h: 'Your consent, and how to withdraw it',
       body: [
         P(
-          'We process your data on the basis of the consent you give when you tick the consent box on the registration form. That consent is specific, informed, and freely given, as the DPDP Act requires.'
+          'We process your data on the basis of the consent you give when you register on the website or create an account in an app, and — for patients — the telemedicine consent you give before your first consultation. That consent is specific, informed, and freely given, as the DPDP Act requires.'
         ),
         P(
-          `You can withdraw your consent at any time by emailing ${ENTITY.email}. Withdrawing consent is as easy as giving it. Once you withdraw, we stop processing your data and delete it unless we are legally required to keep it, and we will not be able to continue your verification or listing.`
+          `You can withdraw your consent at any time by deleting your account in the app (Profile → Delete account) or by emailing ${ENTITY.email}. Withdrawing consent is as easy as giving it. Once you withdraw, we stop processing your data and delete it except for the records we are legally required to keep, and we will not be able to continue providing the service to you.`
         )
       ]
     },
@@ -72,7 +102,7 @@ const privacy = {
       h: 'Website to app: how your data carries over',
       body: [
         P(
-          'This is a point we want to be explicit about. The details you submit here are stored in the same structure the Charak app uses. When the app launches and you sign in with the same account you created here, your profile will already be filled in and you will not be asked to submit the same information or documents again.'
+          'If you registered as a doctor on this website, the details you submitted are carried over to the Charak doctor app. When you sign in to the app with the same account, your profile will already be filled in and you will not be asked to submit the same information or documents again.'
         ),
         P(
           'If you would prefer that your data not carry over, tell us and we will delete your website registration instead.'
@@ -83,7 +113,10 @@ const privacy = {
       h: 'Where your data is stored',
       body: [
         P(
-          'Your registration data is stored in Google Cloud Firestore in Google\'s Mumbai (asia-south1) region, so it stays within India. Account and sign-in information is handled by Google Firebase Authentication, and parts of that authentication infrastructure may be operated by Google outside India.'
+          'The apps\' data — accounts, bookings, symptom information and uploaded files — is stored in Mumbai, India, on Supabase (running on Amazon Web Services), and our servers run in Mumbai on Fly.io. Voice notes are transcribed by Google Cloud in its Mumbai region. Website registrations are stored in Google Cloud Firestore in Mumbai.'
+        ),
+        P(
+          'Some providers operate parts of their infrastructure outside India: Google Firebase (sign-in and push notifications) and Agora (video calls, which pass through Agora\'s network but are not stored). Where data leaves India, it goes only to the providers named here, for the purposes described here.'
         ),
         P('We do not sell your data, and we do not transfer it to data brokers.')
       ]
@@ -93,8 +126,9 @@ const privacy = {
       body: [
         P('We share personal data only in these situations:'),
         UL([
-          'With Google Firebase, which hosts our database and handles sign-in on our behalf as a data processor.',
-          'With professional bodies or registries, strictly to verify the credentials you have given us.',
+          'Between the patient and the doctor on a booking — for example, the doctor sees the patient\'s symptom information, and for a home visit, the address once the visit is confirmed.',
+          'With service providers that process data on our behalf, only as needed for the service: Supabase and Fly.io (hosting), Google Firebase (sign-in and notifications), Google Cloud (voice-note transcription), Agora (video calls) and Razorpay (payments, refunds and payouts).',
+          'With professional bodies or registries, strictly to verify a doctor\'s credentials.',
           'Where we are required to by law, a court order, or a lawful government request.'
         ]),
         P('We do not sell personal data to anyone, for any purpose.')
@@ -104,7 +138,10 @@ const privacy = {
       h: 'How long we keep it',
       body: [
         P(
-          'We keep your registration data for as long as you are part of the Charak network, or until you ask us to delete it. If your registration is rejected, or if you never complete it, we delete the record within 12 months. Waitlist emails are kept until launch or until you unsubscribe, whichever comes first.'
+          'We keep your data for as long as you have an account, or until you ask us to delete it. When you delete your account in the app, your personal data is erased after a 30-day grace period, during which you can change your mind.'
+        ),
+        P(
+          'Booking, payment, payout and consultation records must be kept for the period required by tax law and the applicable medical-record rules, even after an account is deleted. We keep them in de-identified form wherever we can. If a website registration is rejected, or never completed, we delete it within 12 months. Waitlist emails are kept until launch or until you unsubscribe, whichever comes first.'
         )
       ]
     },
@@ -115,7 +152,7 @@ const privacy = {
         UL([
           'Access the personal data we hold about you and know who we have shared it with.',
           'Correct anything that is inaccurate, or complete anything that is missing.',
-          'Have your data erased.',
+          'Have your data erased — you can do this yourself in the app (Profile → Delete account).',
           'Withdraw your consent at any time.',
           'Nominate someone to exercise these rights on your behalf if you die or become incapacitated.',
           'Escalate a complaint to the Data Protection Board of India if we have not resolved it.'
@@ -129,7 +166,7 @@ const privacy = {
       h: 'Security',
       body: [
         P(
-          'The site is served over HTTPS. Data is encrypted in transit and at rest by Google Cloud. Passwords are never stored in readable form. Access to registration data is limited to the members of our team who need it in order to run verification.'
+          'The website and the apps talk to our servers only over encrypted connections (HTTPS), and stored data is encrypted at rest by our hosting providers. On your phone, the apps keep your sign-in in the device\'s secure storage. Access to personal data is limited to the members of our team who need it to run the service.'
         ),
         P(
           'No system is perfectly secure. If a breach occurs that affects your data, we will notify you and the Data Protection Board as the DPDP Act requires.'
@@ -140,7 +177,7 @@ const privacy = {
       h: 'Cookies and tracking',
       body: [
         P(
-          'We do not use advertising or third-party tracking cookies. Firebase Authentication stores a session token in your browser so that you stay signed in — this is necessary for the site to work and cannot be turned off while you are signed in.'
+          'We do not use advertising or third-party tracking cookies. On the website, Firebase Authentication stores a session token in your browser so that you stay signed in — this is necessary for the site to work and cannot be turned off while you are signed in.'
         )
       ]
     },
@@ -148,29 +185,16 @@ const privacy = {
       h: 'Children',
       body: [
         P(
-          'This site is meant for practising healthcare professionals and is not directed at anyone under 18. We do not knowingly collect data from children. If you believe a child has given us data, tell us and we will delete it.'
+          'You must be 18 or older to create an account. A parent or guardian may book a consultation on behalf of a child, and is responsible for the information they share about that child. We do not knowingly collect data from children directly. If you believe a child has given us data, tell us and we will delete it.'
         )
       ]
     },
-    {
-      h: 'Grievance Officer',
-      body: [
-        P(
-          'In line with the DPDP Act and the Information Technology (Intermediary Guidelines) Rules, 2021, you can reach our Grievance Officer at:'
-        ),
-        UL([
-          `Name: ${ENTITY.grievanceOfficer}`,
-          `Email: ${ENTITY.email}`,
-          `Address: ${ENTITY.address}`,
-          'We acknowledge complaints within 24 hours and resolve them within 30 days.'
-        ])
-      ]
-    },
+    grievanceSection,
     {
       h: 'Changes to this policy',
       body: [
         P(
-          `This policy is effective from ${ENTITY.effectiveDate}. If we make a material change, we will update this page and, where the change affects how we use data you have already given us, contact you directly.`
+          `This policy is effective from ${ENTITY.effectiveDate}. If we make a material change, we will update this page and ask you to accept the updated policy in the app; where the change affects how we use data you have already given us, we will also contact you directly.`
         )
       ]
     }
@@ -179,74 +203,99 @@ const privacy = {
 
 const terms = {
   intro:
-    'These terms cover your use of the Charak website and the doctor registration process. By registering, you agree to them.',
+    'These terms cover your use of the Charak website, the Charak patient app and the Charak doctor app. By creating an account or registering, you agree to them.',
   sections: [
     {
-      h: 'Who can register',
+      h: 'What Charak is — and is not',
       body: [
         P(
-          'Registration is open to qualified healthcare practitioners who hold a valid licence or registration with the relevant Indian medical or paramedical council for their field, and who are at least 18 years old. You must be legally permitted to practise in the city you register in.'
-        )
-      ]
-    },
-    {
-      h: 'Registering does not guarantee a listing',
-      body: [
-        P(
-          'This is important, so we will be direct about it. Submitting the registration form places you in a queue for verification. It does not create a listing, an offer of work, an employment relationship, or a partnership with Charak. You become part of the network only after we have verified your credentials and confirmed it to you.'
-        )
-      ]
-    },
-    {
-      h: 'Verification, and our right to decline',
-      body: [
-        P(
-          'We verify credentials before listing anyone, and we aim to complete this within 24 to 48 hours of receiving a complete registration. We may ask you for supporting documents.'
+          'Charak is a technology platform that connects patients with independent, registered healthcare practitioners for online consultations and home visits. Charak does not provide medical care, does not employ the doctors on the platform, and does not make clinical decisions — those rest solely with the treating doctor.'
         ),
         P(
-          'We may decline or withdraw a registration if we cannot verify your credentials, if the information you gave us is inaccurate or incomplete, if your licence lapses or is suspended, or if your conduct puts patients at risk. Where we can, we will tell you why.'
+          'Charak is not for medical emergencies. If you or someone else needs urgent care, call your local emergency number or go to the nearest hospital.'
         )
       ]
     },
     {
-      h: 'No registration fee',
+      h: 'Your account',
       body: [
         P(
-          'Registering with Charak is free. We will never ask you to pay to be verified or listed. If anyone asks you for a payment in exchange for a Charak listing, it is not us — please report it to us.'
+          'You must be at least 18 years old to create an account, and a parent or guardian must act for anyone younger. You sign in with your Google account. You are responsible for keeping the information you give us accurate, and for activity on your account.'
+        )
+      ]
+    },
+    {
+      h: 'Doctors: registration and verification',
+      body: [
+        P(
+          'Registration is open to qualified healthcare practitioners who hold a valid licence or registration with the relevant Indian medical or paramedical council for their field, and who are legally permitted to practise where they offer care.'
         ),
         P(
-          'Commercial terms for consultations will be agreed separately and clearly before the app launches. Nothing in these terms commits you to any fee.'
-        )
-      ]
-    },
-    {
-      h: 'Accurate information',
-      body: [
+          'Registering places you in a queue for verification. It does not create a listing, an offer of work, an employment relationship, or a partnership with Charak. You can take bookings only after we have verified your credentials. We aim to complete verification within 24 to 48 hours of receiving a complete registration, and we may ask for supporting documents.'
+        ),
         P(
-          'You are responsible for the accuracy of what you submit, and for keeping your account credentials secure. Tell us promptly if your registration details or licence status change. Submitting false credentials ends your registration immediately and may be reported to the relevant council.'
+          'We may decline, suspend or withdraw a listing if we cannot verify your credentials, if the information you gave us is inaccurate, if your licence lapses or is suspended, or if your conduct puts patients at risk. Where we can, we will tell you why. Registering and being verified is free — we will never ask you to pay to be listed.'
         )
       ]
     },
     {
-      h: 'Conduct',
+      h: 'Doctors: how you practise on Charak',
       body: [
-        P('While you are part of the Charak network, we ask that you:'),
+        P('While you are on Charak, you agree to:'),
         UL([
           'Practise within the limits of your qualifications, licence, and the applicable professional code of ethics.',
-          'Treat patients and colleagues with dignity and without discrimination.',
-          'Hold patient confidentiality to the standard your profession requires.',
-          'Do not use Charak to solicit payments outside the platform once commercial terms are in place.'
-        ])
+          'Follow the Telemedicine Practice Guidelines, 2020 for online consultations, including deciding whether a case is suitable for teleconsultation.',
+          'Treat patients with dignity and without discrimination, and hold their information to the standard of confidentiality your profession requires.',
+          'Keep your licence, prices and availability up to date.',
+          'Take payment for consultations booked through Charak only through Charak.'
+        ]),
+        P(
+          'You remain professionally and legally responsible for the care you provide.'
+        )
       ]
     },
     {
-      h: 'Our content',
+      h: 'Bookings, fees and payments',
       body: [
         P(
-          'The Charak name, logo, site design, and content belong to us, and you may not copy or reuse them without written permission.'
+          'The fee for a consultation or home visit is shown before you pay. Payments are collected by our payment processor, Razorpay. A slot is held for a short window while you pay; if payment is not completed in that window, the slot is released. Any additional procedure charges for a home visit are shown to you as a bill in the app before you pay them.'
         ),
         P(
-          'The information you submit remains yours. You grant us permission to use it for verification, listing, and operating the service — the Privacy Policy sets out the full scope of that permission.'
+          'Charak keeps a platform commission from each paid consultation and procedure, and pays the balance to the doctor.'
+        )
+      ]
+    },
+    {
+      h: 'Cancellations and refunds',
+      body: [
+        P(
+          'You can cancel a booking in the app before it is completed. If a paid booking is cancelled — by the patient or by the doctor — the full amount is refunded to the original payment method. Refunds are usually credited within 5 to 7 working days, depending on your bank. How missed appointments are handled is shown in the app.'
+        )
+      ]
+    },
+    {
+      h: 'Acceptable use',
+      body: [
+        P('You must not:'),
+        UL([
+          'Impersonate anyone, or give false information or credentials.',
+          'Upload anything unlawful, abusive, or that you do not have the right to share.',
+          'Harass or abuse patients, doctors, or our team.',
+          'Try to break, overload or get around the security of the website or the apps.'
+        ]),
+        P(
+          'Submitting false credentials ends your account immediately and may be reported to the relevant council.'
+        )
+      ]
+    },
+    {
+      h: 'Content and ownership',
+      body: [
+        P(
+          'The Charak name, logo, design, and content belong to us, and you may not copy or reuse them without written permission.'
+        ),
+        P(
+          'What you submit — your profile, documents, symptom information — remains yours. You give us permission to use it only to verify, list, and run the service. The Privacy Policy sets out the full scope of that permission.'
         )
       ]
     },
@@ -254,7 +303,7 @@ const terms = {
       h: 'The service is provided as it is',
       body: [
         P(
-          'The website is provided on an "as is" basis while we build towards launch. We do not promise it will be uninterrupted or error-free, and we may change or withdraw features. We will give you reasonable notice of changes that materially affect your registration.'
+          'We work to keep Charak available and accurate, but we do not promise it will be uninterrupted or error-free, and we may change or withdraw features. We will give you reasonable notice of changes that materially affect you.'
         )
       ]
     },
@@ -262,28 +311,77 @@ const terms = {
       h: 'Limitation of liability',
       body: [
         P(
-          'To the extent Indian law allows, Charak is not liable for indirect or consequential losses, or for loss of profit, business, or goodwill arising from your use of this website. Nothing here limits liability for death or personal injury caused by our negligence, for fraud, or for anything else that cannot lawfully be limited.'
-        ),
-        P(
-          'Charak is a platform that connects patients with practitioners. We are not responsible for the clinical care you provide, and you remain professionally and legally responsible for your own practice.'
+          'To the extent Indian law allows, Charak is not liable for the acts or omissions of the practitioners on the platform, or for indirect or consequential losses, or for loss of profit, business, or goodwill arising from your use of the service. Nothing here limits liability for death or personal injury caused by our negligence, for fraud, or for anything else that cannot lawfully be limited.'
         )
       ]
     },
     {
-      h: 'Ending your registration',
+      h: 'Ending your account',
       body: [
         P(
-          `You can end your registration at any time by emailing ${ENTITY.email}. We may end it if you break these terms. On termination we handle your data as set out in the Privacy Policy.`
+          `You can delete your account at any time in the app (Profile → Delete account), or by emailing ${ENTITY.email}. We may suspend or close an account that breaks these terms. On closure we handle your data as set out in the Privacy Policy.`
         )
       ]
     },
+    grievanceSection,
     {
-      h: 'Governing law',
+      h: 'Governing law and changes',
       body: [
         P(
-          'These terms are governed by the laws of India, and the courts at [city of jurisdiction] have exclusive jurisdiction over any dispute arising from them.'
+          `These terms are governed by the laws of India, and the courts at ${ENTITY.jurisdiction} have exclusive jurisdiction over any dispute arising from them.`
         ),
-        P(`Effective from ${ENTITY.effectiveDate}.`)
+        P(
+          `Effective from ${ENTITY.effectiveDate}. If we make a material change, we will update this page and ask you to accept the new terms in the app.`
+        )
+      ]
+    }
+  ]
+};
+
+const telemedicine = {
+  intro:
+    'Patients are asked to accept this consent before their first consultation on Charak. It follows the Telemedicine Practice Guidelines, 2020 issued in India.',
+  sections: [
+    {
+      h: 'Please read before consulting',
+      body: [
+        UL([
+          'An online consultation happens remotely — by video or voice call, together with the symptom information you share. It is not a substitute for an in-person examination, and it has limits: the doctor may ask you to visit in person or to get tests done.',
+          'The doctor decides whether your condition is suitable for an online consultation, and may decline or refer you elsewhere.',
+          'A prescription, if one is given, is at the doctor\'s professional discretion and follows the applicable rules. Some medicines cannot be prescribed remotely.',
+          'In an emergency, do not use Charak. Call your local emergency number or go to the nearest hospital.'
+        ])
+      ]
+    },
+    {
+      h: 'What you consent to',
+      body: [
+        UL([
+          'Consulting a registered practitioner through Charak, remotely or through a home visit.',
+          'Sharing the symptom information you provide — including photos, video and voice notes — with that practitioner, and Charak processing it, including turning voice notes into text, so the consultation can take place and be recorded.',
+          'Charak and the practitioner keeping consultation records for as long as the law requires.'
+        ])
+      ]
+    },
+    {
+      h: 'What you confirm',
+      body: [
+        UL([
+          'The information you give is accurate and complete to the best of your knowledge.',
+          'You understand the limits of remote care described above.',
+          'If you are booking for someone else, such as a child, you are their parent, guardian or authorised representative.'
+        ])
+      ]
+    },
+    {
+      h: 'Withdrawing consent',
+      body: [
+        P(
+          `You can withdraw this consent and stop at any time, by cancelling your booking or deleting your account in the app, or by emailing ${ENTITY.email}. Withdrawing does not affect care you have already received.`
+        ),
+        P(
+          `By tapping "I agree" in the app, you confirm you have read and accept this consent, together with the Charak Privacy Policy and Terms of Service. Effective from ${ENTITY.effectiveDate}.`
+        )
       ]
     }
   ]
@@ -335,11 +433,12 @@ const disclaimer = {
   ]
 };
 
-const content = { privacy, terms, disclaimer };
+const content = { privacy, terms, telemedicine, disclaimer };
 
 const pageTitles = {
   privacy: 'Privacy Policy',
   terms: 'Terms of Service',
+  telemedicine: 'Telemedicine Consent',
   disclaimer: 'Medical Disclaimer'
 };
 
@@ -378,6 +477,7 @@ export default function Legal({ type = 'privacy' }) {
       <div className="legal-footer-links">
         <Link to="/privacy">Privacy Policy</Link>
         <Link to="/terms">Terms of Service</Link>
+        <Link to="/telemedicine">Telemedicine Consent</Link>
         <Link to="/disclaimer">Medical Disclaimer</Link>
         <Link to="/contact">Contact</Link>
       </div>
