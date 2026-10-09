@@ -18,7 +18,8 @@ registered is not the same as being listed — listing follows verification.
 
 ## Pages
 
-- [Home](https://www.charak.care/): What Charak is, how it works, value for doctors, and FAQ.
+- [Home](https://www.charak.care/): For patients and families: what Charak is, how it works, and FAQ.
+- [For doctors](https://www.charak.care/doctors): Why doctors join, what they control, how verification works, and doctor FAQ.
 - [Doctor registration](https://www.charak.care/register): Registration for qualified practitioners. Requires a Charak account with a confirmed email address.
 - [Contact](https://www.charak.care/contact): Support and grievance contact, including the response SLA for data requests.
 

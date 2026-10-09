@@ -4,6 +4,7 @@ import Layout from './components/Layout';
 import { AuthProvider } from './context/AuthContext';
 import WaitlistModal from './components/WaitlistModal';
 import Home from './pages/Home';
+import Doctors from './pages/Doctors';
 import Register from './pages/Register';
 import RegisterSuccess from './pages/RegisterSuccess';
 import Legal from './pages/Legal';
@@ -18,6 +19,7 @@ export default function App() {
         <Layout onWaitlist={() => setWaitlist(true)}>
           <Routes>
             <Route path="/" element={<Home onWaitlist={() => setWaitlist(true)} />} />
+            <Route path="/doctors" element={<Doctors />} />
             <Route path="/register" element={<Register />} />
             <Route path="/register/success" element={<RegisterSuccess />} />
             {/* Confirming a code both creates the account and signs people

@@ -1,0 +1,161 @@
+/* Register, sign-in, verification, success, legal and contact pages,
+   brought in line with the landing pages. Styling only: no markup or flow
+   depends on anything here. */
+
+/* ----------------------------------------------------- shared type swaps */
+.stepper li, .account-badge, .account-divider, .legal-updated, .legal-footer-links a,
+.aside-note, .form-top, .form-top a, .otp-row .otp-input, .spam-notice code, .contact-card span,
+.scripts-label {
+  font-family: var(--font-sans);
+}
+
+/* ---------------------------------------------------------- register page */
+.register-page { background: var(--ground); grid-template-columns: 40% 60%; min-height: calc(100vh - 80px); }
+.register-aside {
+  position: relative; overflow: hidden;
+  margin: 8px 0 24px 24px; border-radius: 32px;
+  background: var(--chandan-100);
+  padding: 48px 9%;
+}
+.register-aside::before {
+  content: 'चरक'; position: absolute; right: -6%; bottom: 4%;
+  font-family: var(--font-deva); font-weight: 700; font-size: clamp(120px, 14vw, 220px); line-height: 1;
+  color: transparent; -webkit-text-stroke: 1.5px var(--chandan-200);
+  pointer-events: none;
+}
+.register-aside::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 10px;
+  background: radial-gradient(circle at 5px 5px, var(--chandan-300) 2.5px, transparent 3px) 0 0 / 20px 10px;
+}
+.register-aside > * { position: relative; }
+.register-aside > .brand { visibility: hidden; } /* the nav already shows the mark */
+.register-aside .eyebrow { display: none; }
+.register-aside .aside-script { font-family: var(--font-deva); font-size: 22px; color: var(--chandan-600); font-weight: 500; }
+.register-aside h1 { font-size: clamp(46px, 4.8vw, 72px); line-height: .98; letter-spacing: -.04em; margin: 14px 0 0; color: var(--ink-900); }
+.register-aside p { font-size: 17px; line-height: 1.6; color: var(--chandan-800); max-width: 360px; margin-top: 20px; }
+.aside-note { font-size: 13px; color: var(--chandan-700); align-items: center; }
+
+.register-form-wrap { padding: 48px 8%; }
+.form-top { font-size: 12px; margin-bottom: 48px; align-items: center; }
+.form-top a { font-size: 14px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-500); transition: color .2s; }
+.form-top a:hover { color: var(--blue-500); }
+.register-form-wrap h2 { font-size: clamp(30px, 3vw, 40px); letter-spacing: -.03em; line-height: 1.05; }
+.form-lead { font-size: 15px; line-height: 1.6; color: var(--ink-500); max-width: 520px; }
+
+/* Stepper */
+.stepper { gap: 12px; }
+.stepper li { font-size: 13px; letter-spacing: 0; text-transform: none; font-weight: 500; color: var(--ink-400); }
+.stepper li span { width: 26px; height: 26px; font-size: 12px; font-weight: 600; background: var(--ink-100); color: var(--ink-500); }
+.stepper li.is-current { color: var(--ink-900); font-weight: 600; }
+.stepper li.is-current span { background: var(--blue-500); color: #fff; }
+.stepper li.is-done span { background: var(--sage-100); color: var(--sage-700); }
+.stepper li + li:before { background: var(--ink-200); width: 26px; }
+
+/* Cards */
+.verify-card, .account-box {
+  background: var(--card); border: 0; border-radius: var(--r-card);
+  box-shadow: inset 0 0 0 1px var(--line);
+  padding: 28px; max-width: 460px;
+}
+.verify-foot { font-size: 13px; color: var(--ink-500); border-top-color: var(--line); }
+
+/* Fields */
+.register-form-wrap label, .modal label, .auth-card label, .account-box label { font-size: 13px; font-weight: 600; color: var(--ink-800); }
+.register-form-wrap input, .register-form-wrap select, .register-form-wrap textarea,
+.modal input, .modal select, .modal textarea, .auth-card input {
+  border: 1.5px solid var(--line); border-radius: 14px;
+  padding: 14px 15px; font-size: 15px; background: var(--card); color: var(--ink-900);
+  transition: border-color .2s, box-shadow .2s;
+}
+.register-form-wrap input:focus, .register-form-wrap select:focus, .register-form-wrap textarea:focus,
+.modal input:focus, .modal select:focus, .modal textarea:focus, .auth-card input:focus {
+  border-color: var(--blue-400); box-shadow: 0 0 0 4px var(--blue-50);
+}
+.register-form-wrap input::placeholder, .modal input::placeholder { color: var(--ink-300); }
+.phone-row span, .phone-row .dial-code {
+  border: 1.5px solid var(--line); border-right: 0; border-radius: 14px 0 0 14px;
+  background: var(--ink-50); font-size: 15px; font-weight: 600; color: var(--ink-700);
+}
+.phone-row input { border-radius: 0 14px 14px 0; }
+.field-hint { font-size: 12px; color: var(--ink-400); }
+.field-error { font-size: 12.5px; color: #A12A2A; }
+.check-label { font-size: 14px; color: var(--ink-700); }
+.check-label input { accent-color: var(--blue-500); width: 17px !important; height: 17px !important; }
+
+/* Buttons inside the flow */
+.google-btn {
+  border: 1.5px solid var(--line); border-radius: 999px; min-height: 52px;
+  font-size: 15px; font-weight: 600;
+  transition: border-color .2s, background-color .2s;
+}
+.google-btn:hover:not(:disabled) { border-color: var(--ink-300); box-shadow: none; background: var(--ink-50); }
+.account-divider { font-size: 12px; letter-spacing: .04em; color: var(--ink-400); }
+.account-divider:before, .account-divider:after { background: var(--line); }
+.otp-btn { border-radius: 999px; border: 1.5px solid var(--line); font-size: 13px; padding: 10px 16px; }
+.otp-btn:hover:not(:disabled) { border-color: var(--blue-300); background: var(--blue-50); }
+.otp-box { background: var(--ink-50); border: 0; border-radius: 18px; padding: 18px; }
+.otp-lead { font-size: 13px; color: var(--ink-500); }
+.otp-row .otp-input { font-size: 20px; font-weight: 600; letter-spacing: .35em; font-variant-numeric: tabular-nums; }
+.link-btn { font-size: 13px; color: var(--blue-500); text-underline-offset: 3px; }
+
+/* Status pills */
+.account-badge, .phone-confirmed {
+  background: #E6EEDC; color: #3F5A24; border-radius: 999px;
+  font-size: 12px; font-weight: 600; letter-spacing: 0; padding: 6px 12px;
+}
+.signed-in-bar { background: #F1F5EA; border: 0; border-radius: 16px; font-size: 14px; padding: 12px 16px; }
+.spam-notice { border-radius: 14px; border: 0; background: var(--ink-50); font-size: 13px; }
+.spam-notice code { border-radius: 6px; }
+
+/* Channel + certificate boxes */
+.channel-box, .upload-box { border: 0; border-radius: 18px; background: var(--ink-50); padding: 18px; }
+.channel-box b, .upload-box b { font-size: 14px; font-weight: 600; }
+.channel-box p, .upload-box p { font-size: 13px; line-height: 1.55; }
+.upload-drop {
+  border: 1.5px dashed var(--blue-200); border-radius: 14px; background: var(--card);
+  color: var(--blue-600); font-size: 14px; font-weight: 600; padding: 20px;
+}
+.upload-drop:hover { border-color: var(--blue-400); background: var(--blue-50); }
+.upload-chosen { border: 0; border-radius: 14px; background: #F1F5EA; color: #3F5A24; font-size: 14px; }
+
+/* Submit */
+.submit-btn { margin-top: 28px; }
+.submit-hint, .form-hint { font-size: 13px; }
+
+/* Details popup */
+.modal { padding: 34px; }
+.modal-wide { box-shadow: 0 40px 100px -30px rgba(14, 23, 38, .45); }
+.modal-copy { font-size: 15px; color: var(--ink-500); }
+.modal small { font-size: 13px; color: var(--ink-400); }
+
+/* Success */
+.success-icon { background: var(--sage-100); color: var(--sage-700); width: 60px; height: 60px; }
+.form-success h1 { letter-spacing: -.04em; }
+.form-success p { font-size: 17px; color: var(--ink-500); }
+.success-note { font-size: 14px !important; border-left: 3px solid var(--marigold); border-radius: 2px; }
+
+/* ------------------------------------------------------- legal + contact */
+.legal-updated { font-size: 13px; letter-spacing: 0; color: var(--ink-400); }
+.legal-intro { font-size: 18px; line-height: 1.6; color: var(--ink-500); max-width: 780px; }
+.legal-body h3 { font-size: 19px; font-weight: 650; }
+.legal-body p, .legal-list { font-size: 15px; line-height: 1.75; color: var(--ink-600); }
+.legal-list li::marker { color: var(--chandan-400); }
+.legal-footer-links a { font-size: 14px; letter-spacing: 0; color: var(--blue-500); }
+.contact-card { background: var(--card); border: 0; border-radius: var(--r-card); padding: 28px; box-shadow: inset 0 0 0 1px var(--line); }
+.contact-card span { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--chandan-500); }
+.contact-card span:first-child { margin-top: 0; }
+.contact-card a { color: var(--ink-900); font-size: 18px; font-weight: 500; }
+.contact-card a:hover { color: var(--blue-500); }
+
+@media (max-width: 800px) {
+  .register-page { grid-template-columns: 1fr; }
+  .register-aside { margin: 4px 12px 0; min-height: 0; padding: 28px 22px 40px; border-radius: 26px; }
+  .register-aside > .brand { display: none; }
+  .register-aside h1 { font-size: 44px; }
+  .register-aside::before { font-size: 120px; }
+  .aside-note { margin-top: 24px; }
+  .register-form-wrap { padding: 32px 16px 60px; }
+  .form-top { margin-bottom: 28px; }
+  .verify-card, .account-box { padding: 20px; }
+  .modal { padding: 26px 20px; }
+}

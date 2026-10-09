@@ -533,7 +533,7 @@ export default function Register() {
         {steps}
       </div>
 
-      <div className="modal-backdrop" role="presentation">
+      <div className="modal-backdrop" role="presentation" data-lenis-prevent>
       <div className="modal modal-wide" role="dialog" aria-modal="true" data-testid="doctor-details-modal">
         <button
           className="modal-close"

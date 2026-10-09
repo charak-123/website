@@ -27,7 +27,7 @@ export default function WaitlistModal({ close }) {
   };
 
   return (
-    <div className="modal-backdrop" role="presentation">
+    <div className="modal-backdrop" role="presentation" data-lenis-prevent>
       <div className="modal" role="dialog" aria-modal="true" data-testid="patient-waitlist-modal">
         <button
           className="modal-close"

@@ -1,0 +1,283 @@
+/* CHARAK brand layer (Design System V2, adapted for the web).
+   Loaded after index.css so the register, legal and contact pages pick up
+   the same type, colour and buttons as the landing page without being
+   rewritten. Values mirror charak/design-system/tokens.json. */
+
+:root {
+  --blue-50: #EEF3FD; --blue-100: #D9E4FA; --blue-200: #B3C8F4; --blue-300: #84A5EC;
+  --blue-400: #4F7CDD; --blue-500: #2456C9; --blue-600: #1D45A6; --blue-700: #183885;
+  --blue-800: #132B66; --blue-900: #0D1D45;
+  --chandan-50: #FDF8EF; --chandan-100: #F7EAD4; --chandan-200: #EDD2A6; --chandan-300: #DDB06A;
+  --chandan-400: #C88442; --chandan-500: #A85A26; --chandan-600: #8E4B1F; --chandan-700: #733C19;
+  --chandan-800: #572D13; --chandan-900: #3B1E0C;
+  --sage-50: #F3F4EC; --sage-100: #E3E6D4; --sage-200: #C8CDAE; --sage-300: #A9B087;
+  --sage-400: #8A9266; --sage-500: #6F774F; --sage-600: #5C613F; --sage-700: #4A4F33;
+  --ink-50: #F4F5F7; --ink-100: #E6E8EC; --ink-200: #CDD1D8; --ink-300: #A6ADB8;
+  --ink-400: #7A8494; --ink-500: #566072; --ink-600: #3C4556; --ink-700: #283142;
+  --ink-800: #182031; --ink-900: #0E1726;
+
+  /* The one pop colour: marigold (genda phool). Used sparingly, never for
+     text on cream and never with white text on top. */
+  --marigold: #F4B228;
+  --marigold-soft: #FDEBC4;
+  --marigold-deep: #7A4E00;
+
+  --ground: #F7F3EC;
+  --card: #FFFFFF;
+
+  /* Legacy names used across index.css, remapped onto V2. */
+  --ink: var(--ink-900);
+  --muted: var(--ink-500);
+  --cream: var(--ground);
+  --pale: var(--chandan-50);
+  --line: #E8E1D5;
+  --blue: var(--blue-200);
+  --saffron: var(--chandan-400);
+  --copper: var(--chandan-500);
+  --parchment: var(--chandan-100);
+  --leaf: var(--sage-500);
+
+  --font-sans: 'Anek Latin', 'Anek Devanagari', system-ui, sans-serif;
+  --font-deva: 'Anek Devanagari', 'Noto Sans Devanagari', sans-serif;
+  --font-accent: 'Fraunces', Georgia, serif;
+  --accent-axes: 'opsz' 144, 'SOFT' 100, 'WONK' 1;
+
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  --r-card: 26px;
+  --r-tile: 20px;
+}
+
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+
+body {
+  font-family: var(--font-sans);
+  font-variation-settings: 'wdth' 100;
+  background: var(--ground);
+  color: var(--ink);
+  text-rendering: optimizeLegibility;
+}
+
+/* Paper grain over everything: keeps the flat colour from feeling digital. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: .05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+h1, h2, h3 {
+  font-family: var(--font-sans);
+  font-variation-settings: 'wdth' 118;
+  letter-spacing: -.025em;
+}
+
+::selection { background: var(--marigold); color: var(--ink-900); }
+
+.site-shell { overflow: clip; background: var(--ground); }
+
+/* Buttons: blue acts. Pills, no shadows. */
+.button {
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  padding: 16px 24px;
+  min-height: 52px;
+  transition: transform .2s var(--ease-out), background-color .2s, color .2s;
+}
+.button:active { transform: scale(.96); }
+.button-dark { background: var(--blue-500); color: #fff; }
+.button-dark:hover { background: var(--blue-600); }
+.button-light { background: var(--card); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink-100); }
+.button-light:hover { box-shadow: inset 0 0 0 1.5px var(--ink-900); }
+.button-small { padding: 11px 18px; min-height: 44px; font-size: 14px; }
+.button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.eyebrow, .section-kicker, .form-top {
+  font-family: var(--font-sans);
+  font-variation-settings: 'wdth' 112;
+  font-size: 12px;
+  letter-spacing: .14em;
+  font-weight: 600;
+  color: var(--chandan-500);
+  text-transform: uppercase;
+}
+
+.large-copy { font-size: 19px; line-height: 1.6; }
+
+:focus-visible { outline: 2.5px solid var(--blue-400); outline-offset: 3px; border-radius: 6px; }
+
+/* ------------------------------------------------------------------ NAV */
+.nav-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  transition: transform .45s var(--ease-out);
+}
+.nav-wrap.is-hidden { transform: translateY(-110%); }
+.nav-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--ground) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  opacity: 0;
+  transition: opacity .3s;
+  border-bottom: 1px solid var(--line);
+}
+.nav-wrap.is-scrolled::before { opacity: 1; }
+.nav { position: relative; height: 80px; transition: height .3s var(--ease-out); }
+.nav-wrap.is-scrolled .nav { height: 66px; }
+.nav-links { font-size: 15px; gap: 6px; margin-right: 20px; color: var(--ink-600); }
+.nav-links > a {
+  position: relative;
+  padding: 8px 14px;
+  border-radius: 999px;
+  transition: background-color .2s, color .2s;
+}
+.nav-links > a:hover { background: var(--chandan-100); color: var(--chandan-800); }
+.nav-actions { gap: 14px; }
+.text-btn { font-size: 14px; color: var(--ink-600); transition: color .2s; }
+.text-btn:hover { color: var(--blue-500); }
+.brand-word { font-family: var(--font-deva); font-weight: 600; font-size: 26px; color: var(--chandan-600); line-height: 1.2; }
+.brand .brand-mark { transition: transform .6s var(--ease-spring); }
+.brand:hover .brand-mark { transform: rotate(-8deg) scale(1.06); }
+.nav-account { font-size: 13px; }
+
+@media (max-width: 800px) {
+  .nav, .nav-wrap.is-scrolled .nav { height: 66px; }
+  .nav-links {
+    top: 66px;
+    background: var(--ground);
+    box-shadow: none;
+    border-bottom: 1px solid var(--line);
+    padding: 12px 16px 22px;
+    gap: 2px;
+  }
+  .nav-links > a { padding: 12px 0; font-size: 18px; border-radius: 0; }
+  .nav-links > a:hover { background: none; }
+  .nav-mobile-only { font-size: 16px; padding: 12px 0; }
+}
+
+/* --------------------------------------------------------------- FOOTER */
+.footer {
+  background: var(--ink-900);
+  color: var(--ink-100);
+  padding: 96px 0 28px;
+  position: relative;
+  overflow: hidden;
+}
+.footer-grid { position: relative; z-index: 1; }
+.footer-grid a { color: var(--ink-200); font-size: 15px; transition: color .2s, transform .2s; display: block; margin: 12px 0; }
+.footer-grid a:hover { color: var(--chandan-300); }
+.footer-grid span { font-size: 14px; color: var(--ink-300); }
+.footer-label { color: var(--chandan-300); font: 600 12px var(--font-sans); letter-spacing: .14em; text-transform: uppercase; }
+.footer-tag { font-family: var(--font-sans); font-style: normal; font-size: 22px; line-height: 1.35; color: var(--ink-100); font-variation-settings: 'wdth' 112; }
+.footer-tag em { font-family: var(--font-accent); font-style: italic; font-variation-settings: var(--accent-axes); color: var(--marigold); }
+.footer .brand-word { color: var(--chandan-200); }
+.brand-mark-chip { background: var(--chandan-50); border-radius: 14px; }
+.footer-bottom {
+  position: relative;
+  z-index: 1;
+  font: 13px var(--font-sans);
+  color: var(--ink-400);
+  border-top-color: var(--ink-700);
+}
+.footer-giant {
+  font-family: var(--font-deva);
+  font-weight: 700;
+  font-size: clamp(140px, 30vw, 420px);
+  line-height: .8;
+  text-align: center;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--ink-700);
+  margin: 70px 0 -10px;
+  user-select: none;
+  white-space: nowrap;
+}
+.footer-giant span { display: inline-block; }
+
+/* ---------------------------------------------------------------- MODAL */
+.modal-backdrop { background: rgba(14, 23, 38, .55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.modal { border-radius: var(--r-card); }
+.modal h2 { font-variation-settings: 'wdth' 118; letter-spacing: -.03em; }
+.modal input { border-radius: 14px; }
+
+/* Inner pages: wide display headings */
+.legal-page h1, .contact-page h1 { font-variation-settings: 'wdth' 120; letter-spacing: -.035em; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}
+
+.footer-grid a.brand { display: flex; align-items: center; margin: 0; }
+
+/* Emphasis in headings: chandan, same family, no serif italic. */
+h1 em, h2 em { font-family: var(--font-accent); font-style: italic; font-weight: 500; font-variation-settings: var(--accent-axes); letter-spacing: -.02em; color: var(--chandan-500); }
+
+/* ------------------------------------------------------ AUDIENCE SWITCH */
+.aud {
+  display: flex; gap: 2px; padding: 4px; margin-left: 28px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink-900) 6%, transparent);
+}
+.aud a {
+  position: relative; padding: 8px 16px; border-radius: 999px;
+  font-size: 14px; font-weight: 600; color: var(--ink-500);
+  transition: color .3s;
+}
+.aud a > span:last-child { position: relative; z-index: 1; }
+.aud a.on { color: var(--ink-900); }
+.aud a:not(.on):hover { color: var(--ink-900); }
+.aud-pill { position: absolute; inset: 0; border-radius: 999px; background: var(--card); box-shadow: 0 1px 2px rgba(14, 23, 38, .08), 0 4px 12px -6px rgba(14, 23, 38, .2); }
+.nav-links { margin-left: auto; }
+.footer-link-btn { display: block; margin: 12px 0; padding: 0; border: 0; background: none; color: var(--ink-200); font: inherit; font-size: 15px; cursor: pointer; text-align: left; }
+.footer-link-btn:hover { color: var(--chandan-300); }
+.footer-grid { grid-template-columns: 1.3fr .8fr .8fr 1fr 1fr; gap: 40px; }
+
+/* ------------------------------------------ DOCTOR THEME (cool, clinical)
+   Families get warm cream; doctors get a cool blue-white. Same layout and
+   type, a different temperature, so you always know which side you're on. */
+.site-shell { transition: background-color .6s var(--ease-out); }
+.theme-doc { --ground: #F3F5F8; --line: #E2E6ED; background: var(--ground); }
+.theme-doc .nav-wrap::before { background: color-mix(in srgb, #F3F5F8 85%, transparent); }
+.theme-doc .aud { background: var(--ink-100); }
+.theme-doc .aud a { color: var(--ink-600); }
+.theme-doc .aud a.on { color: #fff; }
+.theme-doc .aud-pill { background: var(--blue-500); box-shadow: none; }
+.theme-doc .nav-links > a:hover { background: var(--ink-100); color: var(--ink-900); }
+
+@media (max-width: 1100px) {
+  .nav-links > a[data-testid$='-why'], .nav-links > a[data-testid='nav-contact'] { display: none; }
+}
+@media (max-width: 900px) {
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 800px) {
+  .aud { margin: 0 auto 0 12px; }
+  .aud a { padding: 7px 12px; font-size: 13px; }
+  .nav-links > a[data-testid$='-why'], .nav-links > a[data-testid='nav-contact'] { display: block; }
+  .nav-mobile-cta { color: var(--blue-500) !important; font-weight: 600; }
+}
+@media (max-width: 380px) {
+  .brand-word { display: none; }
+}
+
+/* Mobile menu: a full-screen sheet under the bar, not a strip the width
+   of the content column. */
+@media (max-width: 800px) {
+  .nav-links {
+    position: fixed; top: 66px; left: 0; right: 0; margin: 0;
+    height: calc(100svh - 66px);
+    padding: 18px 20px 32px;
+    overflow-y: auto;
+  }
+  .nav-links > a, .nav-mobile-only { font-size: 22px; font-weight: 500; padding: 14px 0; border-bottom: 1px solid var(--line); }
+}
