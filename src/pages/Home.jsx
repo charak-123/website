@@ -12,7 +12,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   BadgeCheck,
-  CalendarClock,
   Check,
   Footprints,
   HeartHandshake,

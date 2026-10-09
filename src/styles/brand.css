@@ -37,10 +37,10 @@
   --parchment: var(--chandan-100);
   --leaf: var(--sage-500);
 
-  --font-sans: 'Anek Latin', 'Anek Devanagari', system-ui, sans-serif;
-  --font-deva: 'Anek Devanagari', 'Noto Sans Devanagari', sans-serif;
-  --font-accent: 'Fraunces', Georgia, serif;
-  --accent-axes: 'opsz' 144, 'SOFT' 100, 'WONK' 1;
+  --font-sans: "Anek Latin", "Anek Devanagari", system-ui, sans-serif;
+  --font-deva: "Anek Devanagari", "Noto Sans Devanagari", sans-serif;
+  --font-accent: "Fraunces", Georgia, serif;
+  --accent-axes: "opsz" 144, "SOFT" 100, "WONK" 1;
 
   --ease-out: cubic-bezier(.22, 1, .36, 1);
   --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
@@ -54,7 +54,7 @@ html.lenis, html.lenis body { height: auto; }
 
 body {
   font-family: var(--font-sans);
-  font-variation-settings: 'wdth' 100;
+  font-variation-settings: "wdth" 100;
   background: var(--ground);
   color: var(--ink);
   text-rendering: optimizeLegibility;
@@ -62,7 +62,7 @@ body {
 
 /* Paper grain over everything: keeps the flat colour from feeling digital. */
 body::after {
-  content: '';
+  content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
@@ -73,7 +73,7 @@ body::after {
 
 h1, h2, h3 {
   font-family: var(--font-sans);
-  font-variation-settings: 'wdth' 118;
+  font-variation-settings: "wdth" 118;
   letter-spacing: -.025em;
 }
 
@@ -94,14 +94,13 @@ h1, h2, h3 {
 .button:active { transform: scale(.96); }
 .button-dark { background: var(--blue-500); color: #fff; }
 .button-dark:hover { background: var(--blue-600); }
-.button-light { background: var(--card); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink-100); }
-.button-light:hover { box-shadow: inset 0 0 0 1.5px var(--ink-900); }
+
 .button-small { padding: 11px 18px; min-height: 44px; font-size: 14px; }
 .button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
-.eyebrow, .section-kicker, .form-top {
+.eyebrow,.form-top{
   font-family: var(--font-sans);
-  font-variation-settings: 'wdth' 112;
+  font-variation-settings: "wdth" 112;
   font-size: 12px;
   letter-spacing: .14em;
   font-weight: 600;
@@ -122,7 +121,7 @@ h1, h2, h3 {
 }
 .nav-wrap.is-hidden { transform: translateY(-110%); }
 .nav-wrap::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   background: color-mix(in srgb, var(--ground) 82%, transparent);
@@ -179,7 +178,7 @@ h1, h2, h3 {
 .footer-grid a:hover { color: var(--chandan-300); }
 .footer-grid span { font-size: 14px; color: var(--ink-300); }
 .footer-label { color: var(--chandan-300); font: 600 12px var(--font-sans); letter-spacing: .14em; text-transform: uppercase; }
-.footer-tag { font-family: var(--font-sans); font-style: normal; font-size: 22px; line-height: 1.35; color: var(--ink-100); font-variation-settings: 'wdth' 112; }
+.footer-tag { font-family: var(--font-sans); font-style: normal; font-size: 22px; line-height: 1.35; color: var(--ink-100); font-variation-settings: "wdth" 112; }
 .footer-tag em { font-family: var(--font-accent); font-style: italic; font-variation-settings: var(--accent-axes); color: var(--marigold); }
 .footer .brand-word { color: var(--chandan-200); }
 .brand-mark-chip { background: var(--chandan-50); border-radius: 14px; }
@@ -207,11 +206,11 @@ h1, h2, h3 {
 /* ---------------------------------------------------------------- MODAL */
 .modal-backdrop { background: rgba(14, 23, 38, .55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 .modal { border-radius: var(--r-card); }
-.modal h2 { font-variation-settings: 'wdth' 118; letter-spacing: -.03em; }
+.modal h2 { font-variation-settings: "wdth" 118; letter-spacing: -.03em; }
 .modal input { border-radius: 14px; }
 
 /* Inner pages: wide display headings */
-.legal-page h1, .contact-page h1 { font-variation-settings: 'wdth' 120; letter-spacing: -.035em; }
+.legal-page h1, .contact-page h1 { font-variation-settings: "wdth" 120; letter-spacing: -.035em; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
@@ -255,7 +254,7 @@ h1 em, h2 em { font-family: var(--font-accent); font-style: italic; font-weight:
 .theme-doc .nav-links > a:hover { background: var(--ink-100); color: var(--ink-900); }
 
 @media (max-width: 1100px) {
-  .nav-links > a[data-testid$='-why'], .nav-links > a[data-testid='nav-contact'] { display: none; }
+  .nav-links > a[data-testid$="-why"], .nav-links > a[data-testid="nav-contact"] { display: none; }
 }
 @media (max-width: 900px) {
   .footer-grid { grid-template-columns: 1fr 1fr; }
@@ -263,7 +262,7 @@ h1 em, h2 em { font-family: var(--font-accent); font-style: italic; font-weight:
 @media (max-width: 800px) {
   .aud { margin: 0 auto 0 12px; }
   .aud a { padding: 7px 12px; font-size: 13px; }
-  .nav-links > a[data-testid$='-why'], .nav-links > a[data-testid='nav-contact'] { display: block; }
+  .nav-links > a[data-testid$="-why"], .nav-links > a[data-testid="nav-contact"] { display: block; }
   .nav-mobile-cta { color: var(--blue-500) !important; font-weight: 600; }
 }
 @media (max-width: 380px) {
