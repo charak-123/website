@@ -100,6 +100,11 @@
 }
 .signed-in-bar { background: #F1F5EA; border: 0; border-radius: 16px; font-size: 14px; padding: 12px 16px; }
 
+/* Verification details: a heading that splits the form in two */
+.form-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); }
+.form-section b { font-size: 16px; font-weight: 600; color: var(--ink-900); }
+.form-section p { margin: 4px 0 0; font-size: 13px; line-height: 1.55; color: var(--ink-500); }
+
 /* Channel + certificate boxes */
 .channel-box, .upload-box { border: 0; border-radius: 18px; background: var(--ink-50); padding: 18px; }
 .channel-box b, .upload-box b { font-size: 14px; font-weight: 600; }

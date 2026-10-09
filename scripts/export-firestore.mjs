@@ -26,9 +26,11 @@ const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PREFERRED_COLUMNS = {
   doctors: [
     'id', 'createdAt', 'reference', 'name', 'email', 'phone', 'dialCode',
-    'phoneLocal', 'specialty', 'specialtyOther', 'experience', 'country',
+    'phoneLocal', 'practitionerType', 'specialty', 'specialtyOther',
+    'qualification', 'college', 'passingYear', 'council', 'registrationYear',
+    'registeredName', 'nuid', 'hprId', 'certBody', 'experience', 'country',
     'city', 'state', 'channels', 'licenceNumber', 'verification_doc_url',
-    'verification_doc_name', 'verification_status', 'source',
+    'verification_doc_name', 'verification_doc_path', 'verification_status', 'source',
     'authMethod', 'emailVerified', 'consent_at', 'uid'
   ],
   waitlist: ['id', 'createdAt', 'email']

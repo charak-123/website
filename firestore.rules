@@ -27,7 +27,7 @@ service cloud.firestore {
            )
 
         && request.resource.data.keys().hasAll([
-             'name', 'phone', 'specialty', 'country', 'city', 'state', 'channels',
+             'name', 'phone', 'practitionerType', 'specialty', 'country', 'city', 'state', 'channels',
              'licenceNumber', 'verification_doc_url', 'verification_status',
              'source', 'consent_at', 'createdAt'
            ])
@@ -48,11 +48,26 @@ service cloud.firestore {
         && request.resource.data.state is string
         && request.resource.data.state.size() < 100
 
+        && request.resource.data.practitionerType in
+             ['doctor', 'nurse', 'physiotherapist', 'yoga', 'other']
+
+        // Verification details: free text the form already checks, held to
+        // sane sizes here, and an HPR ID that is either absent or 14 digits.
+        && request.resource.data.get('college', '') is string
+        && request.resource.data.get('college', '').size() <= 150
+        && request.resource.data.get('council', '') is string
+        && request.resource.data.get('council', '').size() <= 120
+        && request.resource.data.get('registeredName', '') is string
+        && request.resource.data.get('registeredName', '').size() <= 120
+        && request.resource.data.get('hprId', '').matches('^([0-9]{14})?$')
+
         // The certificate has to be a real upload of theirs, not a link to
-        // somewhere else, and the council number has to be filled in.
+        // somewhere else. Everyone but a yoga practitioner, who has no
+        // statutory council, must give their registration number.
         && request.resource.data.licenceNumber is string
-        && request.resource.data.licenceNumber.size() > 4
         && request.resource.data.licenceNumber.size() < 31
+        && (request.resource.data.practitionerType == 'yoga'
+            || request.resource.data.licenceNumber.size() > 4)
         && request.resource.data.verification_doc_url is string
         && request.resource.data.verification_doc_path is string
         && request.resource.data.verification_doc_path

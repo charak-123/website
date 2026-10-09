@@ -52,8 +52,8 @@ const privacy = {
         UL([
           'Your account: you sign in with your Google account, so we receive your name, email address and Google account identifier — never your Google password. We also store your mobile number once you give it to us, so the doctor or patient on a booking can reach you.',
           'If you are a patient: the addresses you save for home visits and their map location (used to check an address is inside a doctor\'s service area); the symptom information you share before a consultation — text, photos, video and voice notes, and the text transcript of those voice notes; and your bookings, payments, ratings and complaints.',
-          'If you are a doctor: your name, specialty, licence or registration number, verification documents and certificates, years of experience, the area you serve and your base location, your prices and availability, the bank or UPI details we pay you to, and the ratings patients give you.',
-          'Website registration and waitlist: what you enter on the registration form or the waitlist — your name, mobile number, specialty, where you practise, an optional email address and the consultation channels you prefer.',
+          'If you are a doctor or other practitioner: your name, specialty or qualification, licence or registration number, verification documents and certificates, years of experience, the area you serve and your base location, your prices and availability, the bank or UPI details we pay you to, and the ratings patients give you.',
+          'Website registration and waitlist: what you enter on the registration form or the waitlist — your name, mobile number, what you practise and your specialty, where you practise, an optional email address and the consultation channels you prefer; and, to verify you, your qualification, college or institute, year of passing, the council you are registered with, your registration number and year, the name on your certificate if it differs, and your HPR ID or NUID if you choose to give them.',
           'Technical records: a device token so we can send you notifications, and standard server logs, IP addresses and timestamps generated when you use the website or the apps.'
         ]),
         P(
@@ -102,7 +102,7 @@ const privacy = {
       h: 'Website to app: how your data carries over',
       body: [
         P(
-          'If you registered as a doctor on this website, the details you submitted are carried over to the Charak doctor app. When you sign in to the app with the same account, your profile will already be filled in and you will not be asked to submit the same information or documents again.'
+          'If you registered as a practitioner on this website, the details you submitted are carried over to the Charak doctor app. When you sign in to the app with the same account, your profile will already be filled in and you will not be asked to submit the same information or documents again.'
         ),
         P(
           'If you would prefer that your data not carry over, tell us and we will delete your website registration instead.'
@@ -128,7 +128,7 @@ const privacy = {
         UL([
           'Between the patient and the doctor on a booking — for example, the doctor sees the patient\'s symptom information, and for a home visit, the address once the visit is confirmed.',
           'With service providers that process data on our behalf, only as needed for the service: Supabase and Fly.io (hosting), Google Firebase (sign-in and notifications), Google Cloud (voice-note transcription), Agora (video calls) and Razorpay (payments, refunds and payouts).',
-          'With professional bodies or registries, strictly to verify a doctor\'s credentials.',
+          'With professional bodies or registries, strictly to verify a practitioner\'s credentials.',
           'Where we are required to by law, a court order, or a lawful government request.'
         ]),
         P('We do not sell personal data to anyone, for any purpose.')
@@ -228,7 +228,7 @@ const terms = {
       h: 'Doctors: registration and verification',
       body: [
         P(
-          'Registration is open to qualified healthcare practitioners who hold a valid licence or registration with the relevant Indian medical or paramedical council for their field, and who are legally permitted to practise where they offer care.'
+          'Registration is open to qualified healthcare practitioners who hold a valid licence or registration with the relevant Indian medical, nursing or allied healthcare council for their field, and who are legally permitted to practise where they offer care. Yoga practitioners, for whom there is no statutory council, register with a recognised yoga certification instead, and offer wellness sessions rather than medical care.'
         ),
         P(
           'Registering places you in a queue for verification. It does not create a listing, an offer of work, an employment relationship, or a partnership with Charak. You can take bookings only after we have verified your credentials. We aim to complete verification within 24 to 48 hours of receiving a complete registration, and we may ask for supporting documents.'

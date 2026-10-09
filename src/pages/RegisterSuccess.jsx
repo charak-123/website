@@ -65,6 +65,10 @@ export default function RegisterSuccess() {
 
   const reference = justSubmitted || record?.reference || '—';
   const name = (location.state?.name || record?.name || 'there').replace(/^dr\.?\s*/i, '');
+  // Only doctors are addressed as Dr.; records from before practitioner types
+  // existed were all doctors.
+  const type = location.state?.practitionerType || record?.practitionerType || 'doctor';
+  const greeting = type === 'doctor' && name !== 'there' ? `Dr. ${name}` : name;
 
   return (
     <div className="form-page container">
@@ -81,7 +85,7 @@ export default function RegisterSuccess() {
           <em>Charak network.</em>
         </h1>
         <p>
-          Thank you, Dr. <span>{name}</span>. Your reference ID is{' '}
+          Thank you, <span>{greeting}</span>. Your reference ID is{' '}
           <b data-testid="registration-reference">{reference}</b>.{' '}
           {justSubmitted
             ? 'Our team verifies credentials manually and typically completes this within 24–48 hours. We will contact you on the email and phone number you gave us.'

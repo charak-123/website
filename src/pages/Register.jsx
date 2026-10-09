@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { ShieldCheck, ArrowRight, Check, LogOut, MessageSquare, Upload, FileText, X } from 'lucide-react';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -7,6 +7,100 @@ import { db, storage } from '../firebase';
 import { useAuth, authMessage } from '../context/AuthContext';
 import { COUNTRIES, DIAL_BY_COUNTRY, PRIORITY_COUNTRIES } from '../data/countries';
 import { INDIA_STATES, INDIA_UNION_TERRITORIES } from '../data/indiaStates';
+
+// Every type but yoga practises under a council registration, so the number
+// is required of all of them; yoga has no statutory council, and is verified
+// on the certificate alone, quoting a number only if the certificate has one.
+const PRACTITIONER_TYPES = [
+  { value: 'doctor', label: 'Doctor' },
+  { value: 'nurse', label: 'Nurse' },
+  { value: 'physiotherapist', label: 'Physiotherapist' },
+  { value: 'yoga', label: 'Yoga practitioner' },
+  { value: 'other', label: 'Other healthcare professional' }
+];
+
+const DOCTOR_SPECIALTIES = [
+  'General Physician', 'Ayurveda', 'Homeopathy', 'Orthopedic', 'Cardiology',
+  'Dermatology', 'Gynecology', 'Pediatrics', 'Dentistry'
+];
+
+const QUALIFICATION_HINTS = {
+  doctor: 'e.g., MBBS, BAMS, MD',
+  nurse: 'e.g., GNM, B.Sc Nursing',
+  physiotherapist: 'e.g., BPT, MPT',
+  yoga: 'e.g., Level 2 Yoga Wellness Instructor, RYT 200',
+  other: 'e.g., Diploma in Dietetics'
+};
+
+// The register that sits above the state councils, named per type so the
+// option reads as something the practitioner recognises.
+const NATIONAL_REGISTER = {
+  doctor: 'NMC, NCISM, NCH or DCI',
+  nurse: 'Indian Nursing Council',
+  physiotherapist: 'NCAHP',
+  other: 'national council'
+};
+
+const YOGA_CERT_BODIES = ['Yoga Certification Board (YCB)', 'Yoga Alliance'];
+
+const THIS_YEAR = new Date().getFullYear();
+
+// Six characters with the look-alikes (0/O, 1/I/L) left out, so a reference
+// read out over the phone is not misheard.
+const REFERENCE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const newReference = () => {
+  const bytes = crypto.getRandomValues(new Uint8Array(6));
+  return `CHR-${Array.from(bytes, (b) => REFERENCE_ALPHABET[b % REFERENCE_ALPHABET.length]).join('')}`;
+};
+
+// The fields whose rules change with the practitioner type, so a stale
+// message for one type is not left showing under another.
+const VERIFICATION_ERRORS = {
+  specialty: 1, specialtyOther: 1, qualification: 1, certBody: 1, certBodyOther: 1, college: 1,
+  passingYear: 1, council: 1, licenceNumber: 1, registrationYear: 1, nuid: 1, hprId: 1
+};
+
+// Readable but path-safe: storage keys show up as-is in the console.
+const slug = (text) =>
+  text
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40) || 'practitioner';
+
+const LICENCE_COPY = {
+  doctor: {
+    label: 'Medical registration number',
+    placeholder: 'e.g., MH/12345/2011',
+    hint: 'As printed on your council registration.',
+    missing: 'Please enter your medical registration number.'
+  },
+  nurse: {
+    label: 'Nursing council registration number',
+    placeholder: 'As on your registration',
+    hint: 'As printed on your State Nursing Council registration.',
+    missing: 'Please enter your nursing council registration number.'
+  },
+  physiotherapist: {
+    label: 'Registration number',
+    placeholder: 'As on your registration',
+    hint: 'From the council you are registered with.',
+    missing: 'Please enter your registration number.'
+  },
+  yoga: {
+    label: 'Certificate number',
+    placeholder: 'Optional',
+    hint: 'If your certificate has one, e.g. from YCB.',
+    missing: ''
+  },
+  other: {
+    label: 'Registration or licence number',
+    placeholder: 'As on your registration',
+    hint: 'From the council you are registered with.',
+    missing: 'Please enter your registration or licence number.'
+  }
+};
 
 export default function Register() {
   const navigate = useNavigate();
@@ -35,7 +129,21 @@ export default function Register() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [errors, setErrors] = useState({});
+  // Errors are worked out from the form on every render; these decide which
+  // of them to show. A field's message appears once the person has left it
+  // (or picked something, for selects and boxes), and every message appears
+  // after a submit attempt, so nobody is told off for a field not reached yet.
+  const [touched, setTouched] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const touch = (key) => setTouched((t) => (t[key] ? t : { ...t, [key]: true }));
+  const untouch = (keys) =>
+    setTouched((t) => {
+      const next = { ...t };
+      keys.forEach((k) => delete next[k]);
+      return next;
+    });
+  // A rejected file never reaches state, so its reason is held on its own.
+  const [fileError, setFileError] = useState('');
   const [consent, setConsent] = useState(false);
   const [existing, setExisting] = useState(false);
   const [loadingExisting, setLoadingExisting] = useState(true);
@@ -43,8 +151,19 @@ export default function Register() {
   const [form, setForm] = useState({
     name: '',
     email: '',
+    practitionerType: '',
     specialty: '',
+    qualification: '',
     specialtyOther: '',
+    college: '',
+    passingYear: '',
+    council: '',
+    registrationYear: '',
+    nuid: '',
+    hprId: '',
+    registeredName: '',
+    certBody: '',
+    certBodyOther: '',
     city: '',
     state: '',
     pincode: '',
@@ -56,21 +175,25 @@ export default function Register() {
   // so an abandoned registration leaves nothing behind in storage.
   const [certificate, setCertificate] = useState(null);
   const [uploading, setUploading] = useState(false);
+  // One reference for the whole visit: it names the uploaded file, so a retry
+  // after a failed submit overwrites that file instead of leaving a stray one.
+  const referenceRef = useRef(null);
 
   const CERT_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif'];
   const CERT_MAX_BYTES = 10 * 1024 * 1024;
 
   const chooseCertificate = (file) => {
     if (!file) return;
+    touch('certificate');
     if (!CERT_TYPES.includes(file.type)) {
-      setErrors((prev) => ({ ...prev, certificate: 'Please upload a PDF, JPG or PNG.' }));
+      setFileError('Please upload a PDF, JPG or PNG.');
       return;
     }
     if (file.size > CERT_MAX_BYTES) {
-      setErrors((prev) => ({ ...prev, certificate: 'That file is over 10MB. Please upload a smaller scan.' }));
+      setFileError('That file is over 10MB. Please upload a smaller scan.');
       return;
     }
-    setErrors((prev) => ({ ...prev, certificate: '' }));
+    setFileError('');
     setCertificate(file);
   };
 
@@ -120,7 +243,9 @@ export default function Register() {
     setDialCode(`+${DIAL_BY_COUNTRY[value] || ''}`);
     // A state or PIN belonging to the old country means nothing now, and home
     // visits only exist where we have doctors on the ground.
-    setForm((prev) => ({ ...prev, state: '', pincode: '' }));
+    // The council is a state pick in India and free text elsewhere.
+    setForm((prev) => ({ ...prev, state: '', pincode: '', council: '' }));
+    untouch(['state', 'pincode', 'council']);
     if (value !== 'India') setChannels({ online: true, home: false });
   };
 
@@ -223,9 +348,32 @@ export default function Register() {
 
   const update = (e) => {
     const { name, value } = e.target;
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+    if (name === 'practitionerType') {
+      // A specialty or qualification typed for one kind of practitioner does
+      // not carry over to another.
+      setForm({
+        ...form,
+        practitionerType: value,
+        specialty: '',
+        specialtyOther: '',
+        qualification: '',
+        certBody: '',
+        certBodyOther: ''
+      });
+      // The fields below change with the type, so they start fresh.
+      untouch(Object.keys(VERIFICATION_ERRORS));
+      return;
+    }
     if (name === 'specialty') {
       setForm({ ...form, specialty: value, specialtyOther: value === 'Other' ? form.specialtyOther : '' });
+      return;
+    }
+    if (name === 'certBody') {
+      setForm({ ...form, certBody: value, certBodyOther: value === 'Other' ? form.certBodyOther : '' });
+      return;
+    }
+    if (name === 'passingYear' || name === 'registrationYear') {
+      setForm({ ...form, [name]: value.replace(/\D/g, '').slice(0, 4) });
       return;
     }
     if (name === 'pincode' && inIndia) {
@@ -236,7 +384,12 @@ export default function Register() {
   };
 
   const hasChannel = channels.online || channels.home;
-  const needsSpecialtyDetail = form.specialty === 'Other' && !form.specialtyOther.trim();
+  const isDoctor = form.practitionerType === 'doctor';
+  const isYoga = form.practitionerType === 'yoga';
+  // Until a type is chosen the field reads as the general case: required.
+  const licenceCopy = LICENCE_COPY[form.practitionerType] || LICENCE_COPY.other;
+  const typeLabel = PRACTITIONER_TYPES.find((t) => t.value === form.practitionerType)?.label || '';
+  const needsSpecialtyDetail = isDoctor && form.specialty === 'Other' && !form.specialtyOther.trim();
 
   // Checked on trimmed values: `required` alone is satisfied by a single space.
   const validate = () => {
@@ -263,9 +416,13 @@ export default function Register() {
       }
     }
 
-    if (!form.specialty) next.specialty = 'Please choose your specialty.';
-    if (needsSpecialtyDetail) next.specialtyOther = 'Please tell us which specialisation you practise.';
-
+    if (!form.practitionerType) next.practitionerType = 'Please tell us what you practise.';
+    if (isDoctor) {
+      if (!form.specialty) next.specialty = 'Please choose your specialty.';
+      if (needsSpecialtyDetail) next.specialtyOther = 'Please tell us which specialisation you practise.';
+    } else if (form.practitionerType === 'other' && !form.specialtyOther.trim()) {
+      next.specialtyOther = 'Please tell us what you practise.';
+    }
     const city = form.city.trim();
     if (!city) next.city = 'Please enter the city you practise in.';
     else if (city.length > 100) next.city = 'Please use a shorter city name.';
@@ -286,13 +443,62 @@ export default function Register() {
     if (exp && !/^\d{1,2}$/.test(exp)) next.experience = 'Enter years as a number, e.g. 8.';
     else if (exp && Number(exp) > 60) next.experience = 'Please enter 60 or fewer years.';
 
-    const licence = form.licenceNumber.trim();
-    if (!licence) next.licenceNumber = 'Please enter your medical registration number.';
-    else if (!/^[A-Za-z0-9/\-. ]{5,30}$/.test(licence)) {
-      next.licenceNumber = 'Use 5–30 letters, digits or / - . only.';
+    // Verification details, checked in the order they sit on the form so the
+    // first error found is the first one on screen.
+    if (form.practitionerType) {
+      const qual = form.qualification.trim();
+      if (!qual) next.qualification = isYoga ? 'Please enter your certification and level.' : 'Please enter your qualification.';
+      else if (qual.length > 120) next.qualification = 'Please keep this under 120 characters.';
+
+      if (isYoga) {
+        if (!form.certBody) next.certBody = 'Please tell us who certified you.';
+        else if (form.certBody === 'Other' && !form.certBodyOther.trim()) {
+          next.certBodyOther = 'Please name the school or body.';
+        }
+      } else if (!form.college.trim()) {
+        next.college = 'Please enter the college or institute you studied at.';
+      }
+
+      const passing = form.passingYear;
+      if (!passing && !isYoga) next.passingYear = 'Please enter the year you passed.';
+      else if (passing && (passing.length !== 4 || passing < 1950 || passing > THIS_YEAR)) {
+        next.passingYear = `Enter a year between 1950 and ${THIS_YEAR}.`;
+      }
+
+      if (!isYoga && !form.council.trim()) next.council = 'Please tell us which council you are registered with.';
+
+      // Required of everyone but yoga practitioners, and a number that is
+      // given still has to look like one.
+      const licence = form.licenceNumber.trim();
+      if (!licence && !isYoga) next.licenceNumber = licenceCopy.missing;
+      else if (licence && !/^[A-Za-z0-9/\-. ]{5,30}$/.test(licence)) {
+        next.licenceNumber = 'Use 5–30 letters, digits or / - . only.';
+      }
+
+      if (!isYoga) {
+        const reg = form.registrationYear;
+        if (!reg) next.registrationYear = 'Please enter the year you registered.';
+        else if (reg.length !== 4 || reg < 1950 || reg > THIS_YEAR) {
+          next.registrationYear = `Enter a year between 1950 and ${THIS_YEAR}.`;
+        }
+      }
+
+      // Only checked while the field is on screen: a value typed under one
+      // type and hidden by switching would otherwise block an unseen error.
+      const nuid = form.nuid.trim();
+      if (form.practitionerType === 'nurse' && nuid && !/^[A-Za-z0-9-]{4,30}$/.test(nuid)) {
+        next.nuid = 'Use letters and digits only.';
+      }
+
+      const hpr = form.hprId.replace(/\D/g, '');
+      if (!isYoga && form.hprId.trim() && hpr.length !== 14) next.hprId = 'An HPR ID is 14 digits.';
     }
 
-    if (!certificate) next.certificate = 'Please upload your degree or registration certificate.';
+    if (!certificate) {
+      next.certificate = isYoga
+        ? 'Please upload your yoga certificate.'
+        : 'Please upload your registration or degree certificate.';
+    }
 
     if (!hasChannel) next.channels = 'Choose at least one channel.';
     if (!consent) next.consent = 'Please accept the Privacy Policy and Terms to continue.';
@@ -303,17 +509,44 @@ export default function Register() {
     name: 'doctor-full-name',
     email: 'doctor-email',
     phone: 'doctor-phone',
+    practitionerType: 'doctor-practitioner-type',
     specialty: 'doctor-specialty',
     specialtyOther: 'doctor-specialty-other',
     city: 'doctor-city',
     state: 'doctor-state',
     pincode: 'doctor-pincode',
     experience: 'doctor-experience',
+    qualification: 'doctor-qualification',
+    certBody: 'doctor-cert-body',
+    certBodyOther: 'doctor-cert-body-other',
+    college: 'doctor-college',
+    passingYear: 'doctor-passing-year',
+    council: 'doctor-council',
     licenceNumber: 'doctor-licence',
+    registrationYear: 'doctor-registration-year',
+    nuid: 'doctor-nuid',
+    hprId: 'doctor-hpr-id',
+    registeredName: 'doctor-registered-name',
     certificate: 'doctor-certificate',
     channels: 'channel-online',
     consent: 'doctor-consent'
   };
+
+  // Back from a field's test id to its error key, so one blur handler on the
+  // form can mark whichever field was just left.
+  const FIELD_BY_TESTID = {
+    ...Object.fromEntries(Object.entries(FIELD_TESTIDS).map(([k, id]) => [id, k])),
+    'doctor-dial-code': 'phone',
+    'channel-home': 'channels'
+  };
+  const fieldOf = (el) => FIELD_BY_TESTID[el?.dataset?.testid];
+
+  const allErrors = validate();
+  const errors = Object.fromEntries(
+    Object.entries(allErrors).filter(([k]) => submitted || touched[k])
+  );
+  if (fileError) errors.certificate = fileError;
+  const errorCount = Object.keys(errors).length;
 
   if (!ready || (verified && loadingExisting)) {
     return (
@@ -332,14 +565,17 @@ export default function Register() {
         <span className="brand-word" lang="hi">चरक</span>
       </Link>
       <div>
-        <div className="eyebrow">DOCTOR ONBOARDING</div>
+        <div className="eyebrow">PRACTITIONER ONBOARDING</div>
         <div className="aside-script">सेवा से जुड़ें</div>
         <h1>
           Make care
           <br />
           <em>more human.</em>
         </h1>
-        <p>Join a verified network built around the way you practice.</p>
+        <p>
+          Doctors, nurses, physiotherapists and yoga practitioners: join a verified network
+          built around the way you practise.
+        </p>
       </div>
       <span className="aside-note">
         <ShieldCheck size={16} /> Your information is handled with care
@@ -372,7 +608,7 @@ export default function Register() {
           </div>
           {steps}
 
-          <h2>Register as a Charak Doctor</h2>
+          <h2>Register as a Charak practitioner</h2>
           <p className="form-lead">
             Continue with Google, or confirm your mobile number. Either one becomes your login —
             there is no password to remember.
@@ -561,11 +797,20 @@ export default function Register() {
 
         <form
           noValidate
+          onBlur={(e) => {
+            const key = fieldOf(e.target);
+            if (key) touch(key);
+          }}
+          onChange={(e) => {
+            // A pick is a finished answer; typing is not, until the field is left.
+            const key = fieldOf(e.target);
+            if (key && /^(select|checkbox|file)/.test(e.target.type)) touch(key);
+          }}
           onSubmit={async (e) => {
             e.preventDefault();
             if (submitting) return;
-            const found = validate();
-            setErrors(found);
+            setSubmitted(true);
+            const found = { ...validate(), ...(fileError ? { certificate: fileError } : {}) };
             const firstBad = Object.keys(found)[0];
             if (firstBad) {
               setError('');
@@ -581,13 +826,27 @@ export default function Register() {
               // certificate is not one our team can act on, so a failed
               // upload has to stop the whole submission.
               setUploading(true);
-              const safeName = certificate.name.replace(/[^A-Za-z0-9.\-_]/g, '_').slice(-80);
-              const certRef = ref(storage, `verification_docs/${user.uid}/${Date.now()}-${safeName}`);
-              await uploadBytes(certRef, certificate, { contentType: certificate.type });
+              if (!referenceRef.current) referenceRef.current = newReference();
+              const reference = referenceRef.current;
+              // The folder has to be the uid, which is what the storage rules
+              // check; the file name is what makes it findable: reference,
+              // name and type, e.g. CHR-K3P9QX_priya-sharma_nurse.pdf.
+              const ext = (certificate.name.match(/\.([A-Za-z0-9]{1,5})$/)?.[1] || 'bin').toLowerCase();
+              const fileName = `${reference}_${slug(form.name.trim().replace(/^dr\.?\s+/i, ''))}_${form.practitionerType}.${ext}`;
+              const certRef = ref(storage, `verification_docs/${user.uid}/${fileName}`);
+              await uploadBytes(certRef, certificate, {
+                contentType: certificate.type,
+                // Shown alongside the file in the Firebase console.
+                customMetadata: {
+                  reference,
+                  name: form.name.trim(),
+                  practitionerType: form.practitionerType,
+                  originalName: certificate.name.slice(-120)
+                }
+              });
               const verificationDocUrl = await getDownloadURL(certRef);
               setUploading(false);
 
-              const reference = `CHR-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
               // Keyed by uid so one account cannot register twice. Field names
               // mirror the app's schema so launch is a status change, not a
               // migration (PRD §6.3, §8).
@@ -599,8 +858,23 @@ export default function Register() {
                 phoneVerified: viaPhone,
                 email: user.email || form.email.trim(),
                 emailVerified: viaGoogle,
-                specialty: form.specialty,
-                specialtyOther: form.specialty === 'Other' ? form.specialtyOther.trim() : '',
+                practitionerType: form.practitionerType,
+                // Non-doctors have no specialty list, so their type stands in
+                // for it and the app's category still has something to read.
+                specialty: isDoctor ? form.specialty : typeLabel,
+                specialtyOther:
+                  (isDoctor && form.specialty === 'Other') || form.practitionerType === 'other'
+                    ? form.specialtyOther.trim()
+                    : '',
+                qualification: form.qualification.trim(),
+                college: isYoga ? '' : form.college.trim(),
+                passingYear: form.passingYear,
+                council: isYoga ? '' : form.council.trim(),
+                registrationYear: isYoga ? '' : form.registrationYear,
+                nuid: form.practitionerType === 'nurse' ? form.nuid.trim() : '',
+                hprId: isYoga ? '' : form.hprId.replace(/\D/g, ''),
+                registeredName: form.registeredName.trim(),
+                certBody: isYoga ? (form.certBody === 'Other' ? form.certBodyOther.trim() : form.certBody) : '',
                 country,
                 city: form.city.trim(),
                 state: form.state.trim(),
@@ -621,7 +895,7 @@ export default function Register() {
               });
               navigate('/register/success', {
                 replace: true,
-                state: { reference, name: form.name.trim() }
+                state: { reference, name: form.name.trim(), practitionerType: form.practitionerType }
               });
             } catch (err) {
               console.error('Registration submit failed:', err.code, err.message);
@@ -670,7 +944,7 @@ export default function Register() {
               Full name *
               <input
                 name="name"
-                placeholder="Dr. Full Name"
+                placeholder={isDoctor ? 'Dr. Full Name' : 'Full Name'}
                 value={form.name}
                 onChange={update}
                 data-testid="doctor-full-name"
@@ -699,7 +973,6 @@ export default function Register() {
                     value={phone}
                     onChange={(e) => {
                       setPhone(e.target.value.replace(/[^\d\s-]/g, ''));
-                      if (errors.phone) setErrors((prev) => ({ ...prev, phone: '' }));
                     }}
                     data-testid="doctor-phone"
                   />
@@ -723,36 +996,51 @@ export default function Register() {
             )}
 
             <label>
-              Specialty / Category *
+              You are a *
               <select
-                name="specialty"
-                value={form.specialty}
+                name="practitionerType"
+                value={form.practitionerType}
                 onChange={update}
-                data-testid="doctor-specialty"
+                data-testid="doctor-practitioner-type"
               >
-                <option value="">Select specialty</option>
-                <option>General Physician</option>
-                <option>Ayurveda</option>
-                <option>Orthopedic</option>
-                <option>Cardiology</option>
-                <option>Dermatology</option>
-                <option>Gynecology</option>
-                <option>Pediatrics</option>
-                <option>Dentistry</option>
-                <option>Physiotherapy</option>
-                <option>Nurse</option>
-                <option>Other</option>
+                <option value="">Select one</option>
+                {PRACTITIONER_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
               </select>
-              {errors.specialty && <small className="field-error" role="alert">{errors.specialty}</small>}
+              {errors.practitionerType && (
+                <small className="field-error" role="alert">{errors.practitionerType}</small>
+              )}
             </label>
 
-            {form.specialty === 'Other' && (
+            {isDoctor && (
               <label>
-                Which specialisation? *
+                Specialty *
+                <select
+                  name="specialty"
+                  value={form.specialty}
+                  onChange={update}
+                  data-testid="doctor-specialty"
+                >
+                  <option value="">Select specialty</option>
+                  {DOCTOR_SPECIALTIES.map((sp) => (
+                    <option key={sp}>{sp}</option>
+                  ))}
+                  <option>Other</option>
+                </select>
+                {errors.specialty && <small className="field-error" role="alert">{errors.specialty}</small>}
+              </label>
+            )}
+
+            {((isDoctor && form.specialty === 'Other') || form.practitionerType === 'other') && (
+              <label>
+                {isDoctor ? 'Which specialisation? *' : 'What do you practise? *'}
                 <input
                   name="specialtyOther"
                   maxLength={80}
-                  placeholder="e.g., Ophthalmology"
+                  placeholder={isDoctor ? 'e.g., Ophthalmology' : 'e.g., Dietitian'}
                   value={form.specialtyOther}
                   onChange={update}
                   data-testid="doctor-specialty-other"
@@ -830,29 +1118,217 @@ export default function Register() {
               />
               {errors.experience && <small className="field-error" role="alert">{errors.experience}</small>}
             </label>
-
-            <label>
-              Medical registration number *
-              <input
-                name="licenceNumber"
-                maxLength={30}
-                placeholder="e.g., MH/12345/2011"
-                value={form.licenceNumber}
-                onChange={update}
-                data-testid="doctor-licence"
-              />
-              <small className="field-hint">As printed on your council registration.</small>
-              {errors.licenceNumber && (
-                <small className="field-error" role="alert">{errors.licenceNumber}</small>
-              )}
-            </label>
           </div>
 
+          {form.practitionerType && (
+            <>
+              <div className="form-section">
+                <b>Verification details</b>
+                <p>
+                  {isYoga
+                    ? 'What our team needs to check your certification.'
+                    : 'What our team needs to find you on your council’s register. Please enter them exactly as on your certificate.'}
+                </p>
+              </div>
+              <div className="form-grid">
+                <label>
+                  {isDoctor ? 'Highest qualification *' : isYoga ? 'Certification and level *' : 'Qualification *'}
+                  <input
+                    name="qualification"
+                    maxLength={120}
+                    placeholder={QUALIFICATION_HINTS[form.practitionerType]}
+                    value={form.qualification}
+                    onChange={update}
+                    data-testid="doctor-qualification"
+                  />
+                  {errors.qualification && (
+                    <small className="field-error" role="alert">{errors.qualification}</small>
+                  )}
+                </label>
+
+                {isYoga && (
+                  <label>
+                    Certified by *
+                    <select name="certBody" value={form.certBody} onChange={update} data-testid="doctor-cert-body">
+                      <option value="">Select one</option>
+                      {YOGA_CERT_BODIES.map((b) => (
+                        <option key={b}>{b}</option>
+                      ))}
+                      <option>Other</option>
+                    </select>
+                    {errors.certBody && <small className="field-error" role="alert">{errors.certBody}</small>}
+                  </label>
+                )}
+
+                {isYoga && form.certBody === 'Other' && (
+                  <label>
+                    Which school or body? *
+                    <input
+                      name="certBodyOther"
+                      maxLength={120}
+                      placeholder="e.g., Bihar School of Yoga"
+                      value={form.certBodyOther}
+                      onChange={update}
+                      data-testid="doctor-cert-body-other"
+                    />
+                    {errors.certBodyOther && (
+                      <small className="field-error" role="alert">{errors.certBodyOther}</small>
+                    )}
+                  </label>
+                )}
+
+                {!isYoga && (
+                  <label>
+                    College or institute *
+                    <input
+                      name="college"
+                      maxLength={150}
+                      placeholder={isDoctor ? 'e.g., B.J. Medical College, Pune' : 'Where you earned this qualification'}
+                      value={form.college}
+                      onChange={update}
+                      data-testid="doctor-college"
+                    />
+                    {errors.college && <small className="field-error" role="alert">{errors.college}</small>}
+                  </label>
+                )}
+
+                <label>
+                  {isYoga ? 'Year certified' : 'Year of passing *'}
+                  <input
+                    name="passingYear"
+                    inputMode="numeric"
+                    maxLength={4}
+                    placeholder={isYoga ? 'Optional, e.g. 2021' : 'e.g., 2014'}
+                    value={form.passingYear}
+                    onChange={update}
+                    data-testid="doctor-passing-year"
+                  />
+                  {errors.passingYear && <small className="field-error" role="alert">{errors.passingYear}</small>}
+                </label>
+
+                {!isYoga && (
+                  <label>
+                    Registered with *
+                    {inIndia ? (
+                      <select name="council" value={form.council} onChange={update} data-testid="doctor-council">
+                        <option value="">Select your council</option>
+                        <option value="National">National register ({NATIONAL_REGISTER[form.practitionerType]})</option>
+                        <optgroup label="State council">
+                          {[...INDIA_STATES, ...INDIA_UNION_TERRITORIES].map((st) => (
+                            <option key={st} value={st}>
+                              {st}
+                            </option>
+                          ))}
+                        </optgroup>
+                      </select>
+                    ) : (
+                      <input
+                        name="council"
+                        maxLength={120}
+                        placeholder="Your registering body"
+                        value={form.council}
+                        onChange={update}
+                        data-testid="doctor-council"
+                      />
+                    )}
+                    <small className="field-hint">The council that issued your registration.</small>
+                    {errors.council && <small className="field-error" role="alert">{errors.council}</small>}
+                  </label>
+                )}
+
+                <label>
+                  {licenceCopy.label}{!isYoga && ' *'}
+                  <input
+                    name="licenceNumber"
+                    maxLength={30}
+                    placeholder={licenceCopy.placeholder}
+                    value={form.licenceNumber}
+                    onChange={update}
+                    data-testid="doctor-licence"
+                  />
+                  <small className="field-hint">{licenceCopy.hint}</small>
+                  {errors.licenceNumber && (
+                    <small className="field-error" role="alert">{errors.licenceNumber}</small>
+                  )}
+                </label>
+
+                {!isYoga && (
+                  <label>
+                    Year of registration *
+                    <input
+                      name="registrationYear"
+                      inputMode="numeric"
+                      maxLength={4}
+                      placeholder="e.g., 2015"
+                      value={form.registrationYear}
+                      onChange={update}
+                      data-testid="doctor-registration-year"
+                    />
+                    {errors.registrationYear && (
+                      <small className="field-error" role="alert">{errors.registrationYear}</small>
+                    )}
+                  </label>
+                )}
+
+                {form.practitionerType === 'nurse' && (
+                  <label>
+                    NUID
+                    <input
+                      name="nuid"
+                      maxLength={30}
+                      placeholder="Optional"
+                      value={form.nuid}
+                      onChange={update}
+                      data-testid="doctor-nuid"
+                    />
+                    <small className="field-hint">Your Indian Nursing Council unique ID, if you have one.</small>
+                    {errors.nuid && <small className="field-error" role="alert">{errors.nuid}</small>}
+                  </label>
+                )}
+
+                {!isYoga && (
+                  <label>
+                    HPR ID
+                    <input
+                      name="hprId"
+                      inputMode="numeric"
+                      maxLength={20}
+                      placeholder="Optional, 14 digits"
+                      value={form.hprId}
+                      onChange={update}
+                      data-testid="doctor-hpr-id"
+                    />
+                    <small className="field-hint">Your ABDM Healthcare Professional ID. It speeds up verification.</small>
+                    {errors.hprId && <small className="field-error" role="alert">{errors.hprId}</small>}
+                  </label>
+                )}
+
+                <label>
+                  Name on your certificate
+                  <input
+                    name="registeredName"
+                    maxLength={120}
+                    placeholder="Only if different from above"
+                    value={form.registeredName}
+                    onChange={update}
+                    data-testid="doctor-registered-name"
+                  />
+                  <small className="field-hint">For example, a maiden name.</small>
+                  {errors.registeredName && (
+                    <small className="field-error" role="alert">{errors.registeredName}</small>
+                  )}
+                </label>
+              </div>
+            </>
+          )}
+
           <div className="upload-box">
-            <b>Degree or registration certificate *</b>
+            <b>{isYoga ? 'Yoga certificate *' : 'Registration or degree certificate *'}</b>
             <p>
-              One file — your council registration or degree certificate. PDF, JPG or PNG, up to
-              10MB. Only our verification team sees it.
+              {isYoga
+                ? 'One file — your certificate from YCB or the school you trained with.'
+                : 'One file — your council registration or degree certificate.'}{' '}
+              PDF, JPG or PNG, up to 10MB. Only our verification team sees it.
             </p>
             {certificate ? (
               <div className="upload-chosen" data-testid="certificate-chosen">
@@ -892,18 +1368,17 @@ export default function Register() {
 
           <div className="channel-box">
             <b>Preferred channels *</b>
-            <p>{inIndia ? 'Choose one or both' : 'Outside India we onboard doctors for online consultations only'}</p>
+            <p>{inIndia ? 'Choose one or both' : 'Outside India we onboard practitioners for online sessions only'}</p>
             <label className="check-label">
               <input
                 type="checkbox"
                 checked={channels.online}
                 onChange={(e) => {
                   setChannels({ ...channels, online: e.target.checked });
-                  if (errors.channels) setErrors((prev) => ({ ...prev, channels: '' }));
                 }}
                 data-testid="channel-online"
               />
-              Online Consult
+              {isDoctor || !form.practitionerType ? 'Online Consult' : 'Online Session'}
             </label>
             <label className="check-label">
               <input
@@ -912,7 +1387,6 @@ export default function Register() {
                 disabled={!inIndia}
                 onChange={(e) => {
                   setChannels({ ...channels, home: e.target.checked });
-                  if (errors.channels) setErrors((prev) => ({ ...prev, channels: '' }));
                 }}
                 data-testid="channel-home"
               />
@@ -927,7 +1401,6 @@ export default function Register() {
               checked={consent}
               onChange={(e) => {
                 setConsent(e.target.checked);
-                if (errors.consent) setErrors((prev) => ({ ...prev, consent: '' }));
               }}
               data-testid="doctor-consent"
             />{' '}
@@ -936,6 +1409,14 @@ export default function Register() {
           </label>
           {errors.consent && (
             <small className="field-error consent-error" role="alert">{errors.consent}</small>
+          )}
+
+          {submitted && errorCount > 0 && (
+            <small className="form-hint" role="status" data-testid="form-error-count">
+              {errorCount === 1
+                ? '1 field above needs your attention.'
+                : `${errorCount} fields above need your attention.`}
+            </small>
           )}
 
           <button

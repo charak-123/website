@@ -49,14 +49,14 @@ const audienceLinks = {
   ]
 };
 
-/* "Families | Doctors" switch, the way Uber splits Ride and Drive. Each
+/* "Families | Practitioners" switch, the way Uber splits Ride and Drive. Each
    side has its own home page, nav and colour scheme. */
 function AudienceSwitch({ audience, onPick }) {
   return (
     <div className="aud" role="tablist" aria-label="Who is Charak for">
       {[
         { key: 'families', to: '/', label: 'Families' },
-        { key: 'doctors', to: '/doctors', label: 'Doctors' }
+        { key: 'doctors', to: '/doctors', label: 'Practitioners' }
       ].map((o) => (
         <Link
           key={o.key}
@@ -140,7 +140,7 @@ export default function Layout({ children, onWaitlist }) {
             ) : (
               <>
                 <Link className="nav-mobile-only nav-mobile-cta" to="/register" onClick={close} data-testid="nav-mobile-register">
-                  Register as a doctor
+                  Register as a practitioner
                 </Link>
                 {account ? (
                   <button
@@ -155,7 +155,7 @@ export default function Layout({ children, onWaitlist }) {
                   </button>
                 ) : (
                   <Link className="nav-mobile-only" to="/register" onClick={close} data-testid="nav-mobile-sign-in">
-                    Doctor sign in
+                    Practitioner sign in
                   </Link>
                 )}
               </>
@@ -225,7 +225,7 @@ export default function Layout({ children, onWaitlist }) {
               <span className="brand-word" lang="hi">चरक</span>
             </Link>
             <p className="footer-tag">
-              Verified doctors.
+              Verified care.
               <br />
               <em>Online, or at home.</em>
             </p>
@@ -241,11 +241,11 @@ export default function Layout({ children, onWaitlist }) {
           </div>
 
           <div>
-            <p className="footer-label">For doctors</p>
+            <p className="footer-label">For practitioners</p>
             <Link to="/doctors" data-testid="footer-doctors">Why Charak</Link>
             <Link to="/register" data-testid="footer-register">Register</Link>
             <Link to="/register" data-testid="footer-signin">Sign in</Link>
-            <a href="/doctors#faq" data-testid="footer-doctors-faq">Doctor FAQ</a>
+            <a href="/doctors#faq" data-testid="footer-doctors-faq">Practitioner FAQ</a>
           </div>
 
           <div>

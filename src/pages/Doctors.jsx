@@ -26,13 +26,18 @@ const requests = [
   { title: 'BP check', mode: 'Home visit', icon: House, meta: '1.8 km · 5:30 PM' },
   { title: 'Fever follow-up', mode: 'Video consult', icon: Video, meta: 'Today · 7:00 PM' },
   { title: 'Dressing after surgery', mode: 'Home visit', icon: House, meta: '3.2 km · Tomorrow, 9 AM' },
-  { title: 'Sugar report review', mode: 'Video consult', icon: Video, meta: 'Tomorrow · 6:30 PM' }
+  { title: 'Knee physio session', mode: 'Home visit', icon: House, meta: '2.4 km · Tomorrow, 8 AM' },
+  { title: 'Sugar report review', mode: 'Video consult', icon: Video, meta: 'Tomorrow · 6:30 PM' },
+  { title: 'Morning yoga for back pain', mode: 'Online session', icon: Video, meta: 'Daily · 6:30 AM' }
 ];
 
-const eligible = ['MBBS', 'BDS', 'BAMS', 'MD', 'MS', 'Specialists', 'Home visits', 'Online consults'];
+const eligible = [
+  'Doctors', 'Nurses', 'Physiotherapists', 'Yoga practitioners', 'MBBS', 'BAMS', 'BDS',
+  'GNM', 'B.Sc Nursing', 'BPT', 'Specialists', 'Home visits', 'Online sessions'
+];
 
 const controls = [
-  { icon: Video, title: 'Your channels', copy: 'Online consults, home visits, or both. Change it any time.' },
+  { icon: Video, title: 'Your channels', copy: 'Online, at home, or both. Change it any time.' },
   { icon: CalendarClock, title: 'Your schedule', copy: 'Set weekly recurring slots. Take a day off whenever you like.' },
   { icon: IndianRupee, title: 'Your rates', copy: 'You set your fee. Home-visit procedures are billed at your fixed rates.' },
   { icon: Check, title: 'Your call', copy: 'Every request waits for you. Accept what fits, decline what doesn’t.' }
@@ -43,7 +48,7 @@ const joinSteps = [
     icon: UserRoundCheck,
     title: 'Register',
     time: 'A few minutes',
-    copy: 'Sign in with Google or your mobile number. Add your specialty, qualification and registration number.'
+    copy: 'Sign in with Google or your mobile number. Tell us what you practise, your qualification and your registration number.'
   },
   {
     icon: FileCheck2,
@@ -55,20 +60,20 @@ const joinSteps = [
     icon: Stethoscope,
     title: 'Go live',
     time: 'When we launch in your city',
-    copy: 'Set your slots, radius and fees in the Charak doctor app, and patients near you can book.'
+    copy: 'Set your slots, radius and fees in the Charak app, and patients near you can book.'
   }
 ];
 
 const promises = [
   { icon: ShieldCheck, title: 'Verified only', copy: 'No one is listed unchecked, which is why patients can trust everyone on Charak, including you.' },
-  { icon: Stethoscope, title: 'Your judgement, not an algorithm', copy: 'Charak never triages or diagnoses. You read the patient’s concern and decide.' },
-  { icon: RefreshCcw, title: 'Fill it in once', copy: 'What you enter here carries over to the doctor app on the same number. No second upload once you’re verified.' }
+  { icon: Stethoscope, title: 'Your judgement, not an algorithm', copy: 'Charak never triages or diagnoses. You read the patient’s need and decide.' },
+  { icon: RefreshCcw, title: 'Fill it in once', copy: 'What you enter here carries over to the Charak app on the same number. No second upload once you’re verified.' }
 ];
 
 const faqs = [
   {
     q: 'Who can register?',
-    a: 'MBBS/BDS/BAMS and specialists with a valid registration/license number.'
+    a: 'Doctors (MBBS, BDS, BAMS, BHMS and specialists), nurses, physiotherapists and other healthcare professionals with a valid council registration — and yoga practitioners with a recognised certification, such as from YCB.'
   },
   {
     q: 'Is there a fee to register?',
@@ -80,7 +85,7 @@ const faqs = [
   },
   {
     q: 'What do I need to keep handy?',
-    a: 'Your medical registration number and a scan or photo of your registration or degree certificate (PDF, JPG or PNG, up to 10MB).'
+    a: 'Your council registration number, and a scan or photo of your registration or degree certificate (PDF, JPG or PNG, up to 10MB). Yoga practitioners just need their yoga certificate.'
   },
   {
     q: 'Do I need to offer home visits?',
@@ -88,17 +93,17 @@ const faqs = [
   },
   {
     q: 'Will I have to fill this in again in the app?',
-    a: 'No. When you sign in to the Charak doctor app with the same phone number, your details are already there.'
+    a: 'No. When you sign in to the Charak app with the same phone number, your details are already there.'
   },
   {
     q: 'Is this for emergencies?',
-    a: 'No. Charak is for scheduled consultations and visits. Not for emergency, ambulance, or triage services.'
+    a: 'No. Charak is for scheduled consultations, visits and sessions. Not for emergency, ambulance, or triage services.'
   }
 ];
 
 /* ------------------------------------------------------------------- hero */
 
-/* A doctor-app inbox where new requests slide in from the top, the same
+/* A practitioner's inbox in the app, where new requests slide in from the top, the same
    motion the real app uses. */
 function RequestFeed() {
   const [head, setHead] = useState(0);
@@ -117,7 +122,7 @@ function RequestFeed() {
     >
       <div className="feed-top">
         <span>
-          <small>Doctor app preview</small>
+          <small>App preview</small>
           <b>Requests near you</b>
         </span>
         <span className="feed-live"><i /> Live</span>
@@ -163,7 +168,7 @@ function DocHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease }}
           >
-            <Stethoscope size={15} /> For doctors <span>Free to register</span>
+            <Stethoscope size={15} /> For practitioners <span>Free to register</span>
           </motion.div>
           <SplitHeading as="h1" className="dh-title" text={'Your practice,\n*beyond the clinic.*'} onMount delay={0.15} underline />
           <motion.p
@@ -172,9 +177,9 @@ function DocHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.8, ease }}
           >
-            See patients at home and on video, around the hours you already keep.
-            You pick the radius, the slots and the fees. We handle the verification
-            and the bookings.
+            Doctors, nurses, physiotherapists and yoga practitioners: see patients at
+            home and online, around the hours you already keep. You pick the radius,
+            the slots and the fees. We handle the verification and the bookings.
           </motion.p>
           <motion.div
             className="dh-actions"
@@ -183,7 +188,7 @@ function DocHero() {
             transition={{ delay: 0.95, duration: 0.8, ease }}
           >
             <Link to="/register" className="button button-dark" data-testid="doctors-hero-register">
-              Register as a doctor <ArrowRight size={18} />
+              Register now <ArrowRight size={18} />
             </Link>
             <Link to="/register" className="dh-signin" data-testid="doctors-hero-signin">
               Already registered? Sign in
@@ -208,7 +213,7 @@ function DocHero() {
   );
 }
 
-/* Homes scattered around the doctor; the ring shows who's in reach. */
+/* Homes scattered around the practitioner; the ring shows who's in reach. */
 const homes = Array.from({ length: 46 }, (_, k) => {
   const a = k * 2.399963; // golden angle keeps them evenly spread
   const r = 14 + Math.sqrt(k / 46) * 132;
@@ -343,10 +348,11 @@ function Bhishak() {
   return (
     <section className="bhishak container">
       <Reveal className="bhishak-inner">
-        <span className="bhishak-deva" lang="sa">भिषक्</span>
+        <span className="bhishak-deva" lang="sa">चतुष्पाद</span>
         <p>
-          In the Charaka Samhita, the physician is the <em>first</em> of the four feet
-          of healing. We built Charak around that idea: the doctor comes first.
+          In the Charaka Samhita, healing stands on four feet: the physician, the remedy,
+          the <em>caregiver</em> and the patient. Two of them are you. We built Charak
+          around the people who heal.
         </p>
       </Reveal>
     </section>
@@ -375,8 +381,8 @@ function JoinSteps() {
       </div>
       <Reveal className="join-keep" delay={0.2}>
         <b>Keep these handy</b>
-        <span><BadgeCheck size={16} /> Medical registration number</span>
-        <span><FileCheck2 size={16} /> Registration or degree certificate (PDF, JPG or PNG, up to 10MB)</span>
+        <span><BadgeCheck size={16} /> Your council registration number</span>
+        <span><FileCheck2 size={16} /> Registration or degree certificate, or your yoga certificate (PDF, JPG or PNG, up to 10MB)</span>
       </Reveal>
     </section>
   );
@@ -409,12 +415,12 @@ function DocCta() {
         <div className="cta2-copy">
           <SplitHeading text={'Register in minutes.\n*It’s free.*'} />
           <Reveal as="p" delay={0.1}>
-            Get verified now, and be among the first doctors patients see when Charak
-            launches in your city.
+            Get verified now, and be among the first practitioners patients see when
+            Charak launches in your city.
           </Reveal>
           <Reveal className="cta2-actions" delay={0.2}>
             <Link to="/register" className="button button-dark" data-testid="doctors-register-link">
-              Register as a doctor <ArrowRight size={18} />
+              Register now <ArrowRight size={18} />
             </Link>
           </Reveal>
         </div>
@@ -432,7 +438,7 @@ export default function Doctors() {
       <Bhishak />
       <JoinSteps />
       <Promises />
-      <Faq items={faqs} title={'Doctors ask.\n*We answer.*'} />
+      <Faq items={faqs} title={'You ask.\n*We answer.*'} />
       <DocCta />
     </main>
   );

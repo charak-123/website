@@ -696,11 +696,11 @@ function DoctorBridge() {
     <section className="bridge container">
       <Reveal className="bridge-card">
         <div className="bridge-copy">
-          <span className="bridge-tag"><Stethoscope size={15} /> For doctors</span>
-          <h2>Are you a doctor? <em>Bring your practice home.</em></h2>
-          <p>Home visits and online consults, on your schedule and at your rates. Free to register.</p>
+          <span className="bridge-tag"><Stethoscope size={15} /> For practitioners</span>
+          <h2>Doctor, nurse, physio or yoga practitioner? <em>Bring your practice home.</em></h2>
+          <p>Home visits and online sessions, on your schedule and at your rates. Free to register.</p>
           <Link to="/doctors" className="button button-dark" data-testid="bridge-doctors">
-            See Charak for doctors <ArrowRight size={18} />
+            See Charak for practitioners <ArrowRight size={18} />
           </Link>
         </div>
         <div className="bridge-preview" aria-hidden="true">

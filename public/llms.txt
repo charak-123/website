@@ -31,6 +31,6 @@ registered is not the same as being listed — listing follows verification.
 
 ## Notes
 
-- Eligibility: MBBS, BDS, BAMS and specialists holding a valid registration with the relevant Indian medical or paramedical council. Doctors outside India are onboarded for online consultations only.
+- Eligibility: doctors (MBBS, BDS, BAMS, BHMS and specialists), nurses, physiotherapists and other healthcare professionals holding a valid registration with the relevant Indian council; yoga practitioners with a recognised yoga certification. Doctors outside India are onboarded for online consultations only.
 - Charak never asks for payment in exchange for verification or a listing.
 - The word "Charak" refers to Maharishi Charak, a founding figure of Ayurvedic medicine.
