@@ -4,6 +4,7 @@ import { ShieldCheck, ArrowRight, Check, LogOut, MessageSquare, Upload, FileText
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { db, storage } from '../firebase';
+import { api, ApiError } from '../lib/api';
 import { useAuth, authMessage } from '../context/AuthContext';
 import { COUNTRIES, DIAL_BY_COUNTRY, PRIORITY_COUNTRIES } from '../data/countries';
 import { INDIA_STATES, INDIA_UNION_TERRITORIES } from '../data/indiaStates';
@@ -68,6 +69,21 @@ const slug = (text) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 40) || 'practitioner';
+
+// Matches a specialty or practitioner type to one of the backend's fixed
+// categories (General Physician, Nurse, Physiotherapy, …) by name — case-
+// insensitive, since the two lists are maintained separately and drift is
+// expected. No match (a specialty the categories table doesn't have yet,
+// e.g. Ayurveda, or a yoga/other practitioner) returns null rather than
+// guessing; ops assigns the right one by hand during verification review.
+function matchCategoryId(categories, { practitionerType, specialty }) {
+  const byName = (name) =>
+    categories.find((c) => c.name.toLowerCase() === name.toLowerCase())?.id ?? null;
+  if (practitionerType === 'nurse') return byName('Nurse');
+  if (practitionerType === 'physiotherapist') return byName('Physiotherapy');
+  if (practitionerType === 'doctor' && specialty && specialty !== 'Other') return byName(specialty);
+  return null;
+}
 
 const LICENCE_COPY = {
   doctor: {
@@ -216,10 +232,19 @@ export default function Register() {
     setLoadingExisting(true);
     (async () => {
       try {
-        const snap = await getDoc(doc(db, 'doctors', user.uid));
-        if (!cancelled && snap.exists()) setExisting(true);
+        if (viaGoogle) {
+          // /auth/firebase is an idempotent upsert (same one the submit step
+          // calls), so this is safe to call just to check — is_new mirrors
+          // whether the profile step (name + phone) was ever completed.
+          const idToken = await user.getIdToken();
+          const { is_new } = await api.post('/auth/firebase', { id_token: idToken, role: 'doctor' });
+          if (!cancelled && !is_new) setExisting(true);
+        } else {
+          const snap = await getDoc(doc(db, 'doctors', user.uid));
+          if (!cancelled && snap.exists()) setExisting(true);
+        }
       } catch (err) {
-        console.warn('Could not look up existing registration:', err.code);
+        console.warn('Could not look up existing registration:', err);
       } finally {
         if (!cancelled) setLoadingExisting(false);
       }
@@ -227,7 +252,7 @@ export default function Register() {
     return () => {
       cancelled = true;
     };
-  }, [verified, user]);
+  }, [verified, user, viaGoogle]);
 
   const e164 = () => `+${dialCode.replace(/\D/g, '')}${phone.replace(/\D/g, '')}`;
   const phoneDigits = phone.replace(/\D/g, '');
@@ -821,84 +846,167 @@ export default function Register() {
             }
             setSubmitting(true);
             setError('');
+            if (!referenceRef.current) referenceRef.current = newReference();
+            const reference = referenceRef.current;
             try {
-              // The document goes up first: a registration without its
-              // certificate is not one our team can act on, so a failed
-              // upload has to stop the whole submission.
-              setUploading(true);
-              if (!referenceRef.current) referenceRef.current = newReference();
-              const reference = referenceRef.current;
-              // The folder has to be the uid, which is what the storage rules
-              // check; the file name is what makes it findable: reference,
-              // name and type, e.g. CHR-K3P9QX_priya-sharma_nurse.pdf.
-              const ext = (certificate.name.match(/\.([A-Za-z0-9]{1,5})$/)?.[1] || 'bin').toLowerCase();
-              const fileName = `${reference}_${slug(form.name.trim().replace(/^dr\.?\s+/i, ''))}_${form.practitionerType}.${ext}`;
-              const certRef = ref(storage, `verification_docs/${user.uid}/${fileName}`);
-              await uploadBytes(certRef, certificate, {
-                contentType: certificate.type,
-                // Shown alongside the file in the Firebase console.
-                customMetadata: {
-                  reference,
-                  name: form.name.trim(),
-                  practitionerType: form.practitionerType,
-                  originalName: certificate.name.slice(-120)
-                }
-              });
-              const verificationDocUrl = await getDownloadURL(certRef);
-              setUploading(false);
+              if (viaGoogle) {
+                // Signs in against the same backend and the same Supabase
+                // account the app uses — not a copy to reconcile later. See
+                // src/lib/api.js and backend/app/routers/auth.py's
+                // /auth/firebase.
+                const idToken = await user.getIdToken();
+                const { token: apiToken } = await api.post('/auth/firebase', {
+                  id_token: idToken,
+                  role: 'doctor'
+                });
 
-              // Keyed by uid so one account cannot register twice. Field names
-              // mirror the app's schema so launch is a status change, not a
-              // migration (PRD §6.3, §8).
-              await setDoc(doc(db, 'doctors', user.uid), {
-                name: form.name.trim(),
-                // For a phone account this is the number Firebase confirmed,
-                // never what a field says; a Google account supplies its own.
-                phone: user.phoneNumber || e164(),
-                phoneVerified: viaPhone,
-                email: user.email || form.email.trim(),
-                emailVerified: viaGoogle,
-                practitionerType: form.practitionerType,
-                // Non-doctors have no specialty list, so their type stands in
-                // for it and the app's category still has something to read.
-                specialty: isDoctor ? form.specialty : typeLabel,
-                specialtyOther:
-                  (isDoctor && form.specialty === 'Other') || form.practitionerType === 'other'
-                    ? form.specialtyOther.trim()
-                    : '',
-                qualification: form.qualification.trim(),
-                college: isYoga ? '' : form.college.trim(),
-                passingYear: form.passingYear,
-                council: isYoga ? '' : form.council.trim(),
-                registrationYear: isYoga ? '' : form.registrationYear,
-                nuid: form.practitionerType === 'nurse' ? form.nuid.trim() : '',
-                hprId: isYoga ? '' : form.hprId.replace(/\D/g, ''),
-                registeredName: form.registeredName.trim(),
-                certBody: isYoga ? (form.certBody === 'Other' ? form.certBodyOther.trim() : form.certBody) : '',
-                country,
-                city: form.city.trim(),
-                state: form.state.trim(),
-                pincode: form.pincode.trim(),
-                experience: form.experience.trim(),
-                licenceNumber: form.licenceNumber.trim(),
-                verification_doc_url: verificationDocUrl,
-                verification_doc_path: certRef.fullPath,
-                verification_doc_name: certificate.name,
-                channels,
-                verification_status: 'pending',
-                source: 'website',
-                consent_at: serverTimestamp(),
-                authMethod: viaPhone ? 'phone' : 'google',
-                reference,
-                uid: user.uid,
-                createdAt: serverTimestamp()
-              });
+                const categories = await api.get('/categories').catch(() => []);
+                const categoryId = matchCategoryId(categories, {
+                  practitionerType: form.practitionerType,
+                  specialty: form.specialty
+                });
+
+                setUploading(true);
+                await api.uploadFile('/uploads/doctor/verification-document', certificate, apiToken);
+                setUploading(false);
+
+                await api.patch(
+                  '/doctors/me',
+                  {
+                    name: form.name.trim(),
+                    phone: e164(),
+                    category_id: categoryId,
+                    offers_online_consult: channels.online,
+                    offers_home_visit: channels.home,
+                    // Everything the form collects that has no column of its
+                    // own yet — see migration 0019. Nothing here is silently
+                    // dropped just because today's schema doesn't have a
+                    // dedicated field for it.
+                    application_details: {
+                      practitionerType: form.practitionerType,
+                      specialty: isDoctor ? form.specialty : typeLabel,
+                      specialtyOther:
+                        (isDoctor && form.specialty === 'Other') || form.practitionerType === 'other'
+                          ? form.specialtyOther.trim()
+                          : '',
+                      qualification: form.qualification.trim(),
+                      college: isYoga ? '' : form.college.trim(),
+                      passingYear: form.passingYear,
+                      council: isYoga ? '' : form.council.trim(),
+                      registrationYear: isYoga ? '' : form.registrationYear,
+                      nuid: form.practitionerType === 'nurse' ? form.nuid.trim() : '',
+                      hprId: isYoga ? '' : form.hprId.replace(/\D/g, ''),
+                      registeredName: form.registeredName.trim(),
+                      certBody: isYoga
+                        ? form.certBody === 'Other'
+                          ? form.certBodyOther.trim()
+                          : form.certBody
+                        : '',
+                      country,
+                      city: form.city.trim(),
+                      state: form.state.trim(),
+                      pincode: form.pincode.trim(),
+                      experience: form.experience.trim(),
+                      reference,
+                      source: 'website'
+                    }
+                  },
+                  apiToken
+                );
+
+                await api.post(
+                  '/doctors/me/verification',
+                  { license_number: form.licenceNumber.trim() },
+                  apiToken
+                );
+              } else {
+                // Phone sign-in stays on Firestore for now — see the Firebase
+                // sign-in session notes on why phone wasn't moved in this pass.
+                //
+                // The document goes up first: a registration without its
+                // certificate is not one our team can act on, so a failed
+                // upload has to stop the whole submission.
+                setUploading(true);
+                // The folder has to be the uid, which is what the storage
+                // rules check; the file name is what makes it findable:
+                // reference, name and type, e.g. CHR-K3P9QX_priya-sharma_nurse.pdf.
+                const ext = (certificate.name.match(/\.([A-Za-z0-9]{1,5})$/)?.[1] || 'bin').toLowerCase();
+                const fileName = `${reference}_${slug(form.name.trim().replace(/^dr\.?\s+/i, ''))}_${form.practitionerType}.${ext}`;
+                const certRef = ref(storage, `verification_docs/${user.uid}/${fileName}`);
+                await uploadBytes(certRef, certificate, {
+                  contentType: certificate.type,
+                  // Shown alongside the file in the Firebase console.
+                  customMetadata: {
+                    reference,
+                    name: form.name.trim(),
+                    practitionerType: form.practitionerType,
+                    originalName: certificate.name.slice(-120)
+                  }
+                });
+                const verificationDocUrl = await getDownloadURL(certRef);
+                setUploading(false);
+
+                // Keyed by uid so one account cannot register twice. Field
+                // names mirror the app's schema so launch is a status
+                // change, not a migration (PRD §6.3, §8).
+                await setDoc(doc(db, 'doctors', user.uid), {
+                  name: form.name.trim(),
+                  // Firebase confirmed this number, never what a field says.
+                  phone: user.phoneNumber || e164(),
+                  phoneVerified: true,
+                  email: form.email.trim(),
+                  emailVerified: false,
+                  practitionerType: form.practitionerType,
+                  // Non-doctors have no specialty list, so their type stands
+                  // in for it and the app's category still has something to
+                  // read.
+                  specialty: isDoctor ? form.specialty : typeLabel,
+                  specialtyOther:
+                    (isDoctor && form.specialty === 'Other') || form.practitionerType === 'other'
+                      ? form.specialtyOther.trim()
+                      : '',
+                  qualification: form.qualification.trim(),
+                  college: isYoga ? '' : form.college.trim(),
+                  passingYear: form.passingYear,
+                  council: isYoga ? '' : form.council.trim(),
+                  registrationYear: isYoga ? '' : form.registrationYear,
+                  nuid: form.practitionerType === 'nurse' ? form.nuid.trim() : '',
+                  hprId: isYoga ? '' : form.hprId.replace(/\D/g, ''),
+                  registeredName: form.registeredName.trim(),
+                  certBody: isYoga ? (form.certBody === 'Other' ? form.certBodyOther.trim() : form.certBody) : '',
+                  country,
+                  city: form.city.trim(),
+                  state: form.state.trim(),
+                  pincode: form.pincode.trim(),
+                  experience: form.experience.trim(),
+                  licenceNumber: form.licenceNumber.trim(),
+                  verification_doc_url: verificationDocUrl,
+                  verification_doc_path: certRef.fullPath,
+                  verification_doc_name: certificate.name,
+                  channels,
+                  verification_status: 'pending',
+                  source: 'website',
+                  consent_at: serverTimestamp(),
+                  authMethod: 'phone',
+                  reference,
+                  uid: user.uid,
+                  createdAt: serverTimestamp()
+                });
+              }
               navigate('/register/success', {
                 replace: true,
                 state: { reference, name: form.name.trim(), practitionerType: form.practitionerType }
               });
             } catch (err) {
-              console.error('Registration submit failed:', err.code, err.message);
+              console.error('Registration submit failed:', err);
+              if (err instanceof ApiError) {
+                setError(
+                  err.status === 401
+                    ? 'Your session needs a refresh. Please sign out, sign in again, and resubmit.'
+                    : err.message || 'Could not submit registration. Please check your connection and try again.'
+                );
+                return;
+              }
               if (err.code && err.code.startsWith('storage/')) {
                 setError(
                   err.code === 'storage/unauthorized'

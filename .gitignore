@@ -38,3 +38,5 @@ css_chunk_*.css
 serviceAccountKey.json
 *-serviceAccountKey.json
 exports/
+.vercel
+.env*
