@@ -7,5 +7,7 @@ Disallow: /register/success
 # Account pages are gated and have nothing to index.
 Disallow: /signin
 Disallow: /signup
+# Staff-only; never linked from the site and not meant to be found by crawling.
+Disallow: /admin
 
 Sitemap: https://www.charak.care/sitemap.xml
