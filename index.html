@@ -2,6 +2,21 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <script>
+      // After a deploy, a page cached from before it asks for script files
+      // that no longer exist. Reload once to pick up the current page, and
+      // no more than once a minute, so a real outage cannot loop.
+      window.addEventListener('error', function (e) {
+        var t = e.target;
+        if (!t || t.tagName !== 'SCRIPT' || !/\/assets\//.test(t.src || '')) return;
+        try {
+          var last = Number(sessionStorage.getItem('charak-asset-reload') || 0);
+          if (Date.now() - last < 60000) return;
+          sessionStorage.setItem('charak-asset-reload', String(Date.now()));
+        } catch (_) {}
+        location.reload();
+      }, true);
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#F7F3EC" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
