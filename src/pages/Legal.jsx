@@ -1,15 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-// TODO(legal): fill these in before launch — they are required by the DPDP Act 2023
-// and the IT Rules 2021, and Google's OAuth verification and the app stores check
-// for them. The whole text still needs review by a lawyer before publication.
+// Required by the DPDP Act 2023 and the IT Rules 2021, and checked by Google's OAuth
+// verification and the app stores. The whole text still needs review by a lawyer.
 const ENTITY = {
-  name: '[Legal entity name, e.g. Charak Health Technologies Pvt. Ltd.]',
-  address: '[Registered office address]',
-  grievanceOfficer: '[Grievance Officer name]',
+  name: 'M/s Radiant Technologies',
+  address: 'R212, Sector 4, Airoli, Navi Mumbai, Maharashtra 400 708',
+  gstin: '27AAHFR2768R1ZA',
+  grievanceOfficer: 'Neelima Patiil',
+  grievanceEmail: 'info@radianttechnologies.in',
+  grievancePhone: '+91 93701 44414',
   email: 'upcharchikitsa@gmail.com',
-  jurisdiction: '[city of jurisdiction]',
+  jurisdiction: 'Navi Mumbai',
   effectiveDate: '10 October 2026'
 };
 
@@ -23,8 +25,9 @@ const grievanceSection = {
       'In line with the DPDP Act and the Information Technology (Intermediary Guidelines) Rules, 2021, you can reach our Grievance Officer at:'
     ),
     UL([
-      `Name: ${ENTITY.grievanceOfficer}`,
-      `Email: ${ENTITY.email}`,
+      `Name: ${ENTITY.grievanceOfficer} (Grievance Officer and Data Protection Officer)`,
+      `Email: ${ENTITY.grievanceEmail}`,
+      `Phone: ${ENTITY.grievancePhone}`,
       `Address: ${ENTITY.address}`,
       'We acknowledge complaints within 24 hours and resolve them within 30 days.'
     ])
@@ -41,7 +44,7 @@ const privacy = {
         P(
           `${ENTITY.name} ("Charak", "we", "us") is the Data Fiduciary for the personal data described in this policy, as defined under India's Digital Personal Data Protection Act, 2023 ("DPDP Act").`
         ),
-        P(`Registered office: ${ENTITY.address}`),
+        P(`Registered office: ${ENTITY.address}. GSTIN: ${ENTITY.gstin}.`),
         P(`Questions or requests: ${ENTITY.email}`)
       ]
     },

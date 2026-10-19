@@ -265,7 +265,7 @@ export default function Layout({ children, onWaitlist }) {
             <a href="tel:+918655044414" data-testid="footer-phone">
               +91 86550 44414
             </a>
-            <span data-testid="footer-address">[Registered Address — placeholder]</span>
+            <span data-testid="footer-address">M/s Radiant Technologies, R212, Sector 4, Airoli, Navi Mumbai 400 708</span>
           </div>
         </div>
 
