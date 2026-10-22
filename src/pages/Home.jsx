@@ -184,7 +184,7 @@ const careKinds = [
   { icon: Syringe, name: 'Nursing care', note: 'Dressings, injections, elder care', tone: 'sage' },
   { icon: Footprints, name: 'Physiotherapy', note: 'Back on your feet, at home', tone: 'clay' },
   { icon: Smile, name: 'Dentistry', note: 'Consults and follow-ups', tone: 'ink' },
-  { icon: Video, name: 'Online consults', note: 'Care, wherever you are', tone: 'sky' }
+  { icon: Video, name: 'Online consults', note: 'Doctors in India and abroad', tone: 'sky' }
 ];
 
 const faqs = [
@@ -207,6 +207,14 @@ const faqs = [
   {
     q: 'Does Charak diagnose me?',
     a: 'No. Charak never diagnoses or triages, and there is no AI deciding anything. Your doctor reads your concern and advises you directly.'
+  },
+  {
+    q: 'Can I consult a doctor outside India?',
+    a: 'Yes. Online consults aren’t tied to your city, so you can talk to doctors in other countries too. And if you live abroad, you can book a home visit for your parents here.'
+  },
+  {
+    q: 'Where are you starting?',
+    a: 'Mumbai first. Home visits begin there, and we’ll add more cities after that.'
   },
   {
     q: 'Is this for emergencies?',
@@ -333,7 +341,7 @@ function Hero({ onWaitlist }) {
             transition={{ duration: 0.7, ease }}
           >
             <span className="pulse-dot" />
-            Launching soon in India
+            Starting soon in Mumbai
             <Greeting />
           </motion.div>
 
@@ -354,8 +362,8 @@ function Hero({ onWaitlist }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.95, duration: 0.8, ease }}
           >
-            Verified doctors, nurses and physios who come to your home when you need them,
-            and on video when you don’t. Care that feels like family.
+            Verified doctors, nurses and physios who visit you at home, or talk to you
+            on video from wherever they are. Even doctors in other countries.
           </motion.p>
 
           <motion.div
@@ -568,8 +576,9 @@ function Heritage() {
         <div className="heritage2-copy">
           <SplitHeading text={'Two thousand years ago,\n*the vaidya came home.*'} />
           <Reveal as="p" className="large-copy">
-            Charaka, the physician behind the Charaka Samhita, wrote that healing stands on
-            four feet. We took that idea, and built a modern, verified network around it.
+            In old Bharat you didn’t go looking for the vaidya. The vaidya came to your
+            house. Charak, named after the physician who wrote the Charaka Samhita, brings
+            that back: the doctor comes to you, or calls you on video.
           </Reveal>
         </div>
       </div>
@@ -657,10 +666,10 @@ function CareKinds() {
     <section className="kinds container">
       <div className="kinds-head">
         <div>
-          <SplitHeading text={'One network.\n*Every kind of care.*'} />
+          <SplitHeading text={'Whatever you need,\n*we have someone.*'} />
         </div>
         <Reveal as="p" delay={0.2}>
-          Different traditions, one human approach to helping people feel better.
+          Allopathy, Ayurveda, nursing, physio and dental care, at home or online.
         </Reveal>
       </div>
       <div className="kinds-grid">
@@ -732,7 +741,7 @@ function Trust() {
   return (
     <section className="trust2 container">
       <div className="trust2-head">
-        <SplitHeading text={'Old wisdom.\n*New trust.*'} />
+        <SplitHeading text={'What we promise\n*you.*'} />
       </div>
       <div className="trust2-grid">
         {items.map((t, k) => {
@@ -756,10 +765,10 @@ function FinalCta({ onWaitlist }) {
       <div className="container cta2-inner">
         <Rangoli className="cta2-rangoli" stroke="var(--chandan-200)" petals={[10, 14, 20, 28]} spin={90} />
         <div className="cta2-copy">
-          <SplitHeading text={'Coming soon\n*to your city.*'} />
+          <SplitHeading text={'Mumbai first.\n*Your city next.*'} />
           <Reveal as="p" delay={0.1}>
-            Join the early list and we’ll tell you the day Charak reaches your city.
-            One message. No spam, promise.
+            We start in Mumbai, then more cities. Leave your number and we’ll send you
+            one message on the day Charak reaches yours.
           </Reveal>
           <Reveal className="cta2-actions" delay={0.2}>
             <button className="button button-dark" onClick={onWaitlist} data-testid="bottom-patient-waitlist">

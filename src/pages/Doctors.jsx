@@ -70,6 +70,13 @@ const promises = [
   { icon: RefreshCcw, title: 'Fill it in once', copy: 'What you enter here carries over to the Charak app on the same number. No second upload once you’re verified.' }
 ];
 
+const reasons = [
+  { icon: IndianRupee, title: 'No clinic to set up', copy: 'No rent, no equipment loan, no staff salaries. If you are just out of internship or PG, you can start seeing your own patients now.' },
+  { icon: CalendarClock, title: 'Your own hours', copy: 'Hospital shifts are fixed by someone else. Here you open the slots you want, evenings, weekends or a few hours a week.' },
+  { icon: House, title: 'Extra income', copy: 'Keep your hospital job and see Charak patients on the side. Every fee goes to the work you chose to do.' },
+  { icon: Video, title: 'Online, offline or both', copy: 'Video consults from home, visits in your area, or a mix. Change it whenever you want.' }
+];
+
 const faqs = [
   {
     q: 'Who can register?',
@@ -86,6 +93,14 @@ const faqs = [
   {
     q: 'What do I need to keep handy?',
     a: 'Your council registration number, and a scan or photo of your registration or degree certificate (PDF, JPG or PNG, up to 10MB). Yoga practitioners just need their yoga certificate.'
+  },
+  {
+    q: 'Can I do this alongside my hospital job?',
+    a: 'Yes. Many practitioners will use Charak for extra income. Open slots only when you are free, and nothing is booked outside them.'
+  },
+  {
+    q: 'Which cities are you starting in?',
+    a: 'Mumbai first. Other cities follow after that. You can register from anywhere now, and we will tell you when we go live in your city.'
   },
   {
     q: 'Do I need to offer home visits?',
@@ -177,9 +192,10 @@ function DocHero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.8, ease }}
           >
-            Doctors, nurses, physiotherapists and yoga practitioners: see patients at
-            home and online, around the hours you already keep. You pick the radius,
-            the slots and the fees. We handle the verification and the bookings.
+            Setting up a clinic costs lakhs. A hospital job decides your hours for you.
+            On Charak you see patients at home or online, when you choose, at the fee
+            you set. Keep your job and earn on the side, or build your own practice
+            one patient at a time.
           </motion.p>
           <motion.div
             className="dh-actions"
@@ -200,6 +216,7 @@ function DocHero() {
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2 }}
           >
+            <li><Check size={15} /> Starting in Mumbai</li>
             <li><Check size={15} /> No fee to join</li>
             <li><Check size={15} /> Verified in 24–48 hrs</li>
             <li><Check size={15} /> No AI between you and patients</li>
@@ -318,8 +335,8 @@ function Controls() {
         <div className="docs-copy">
           <SplitHeading text={'You set\n*the rules.*'} />
           <Reveal as="p" className="docs-lead" delay={0.1}>
-            More control, less friction. Charak fits around how you already practise,
-            not the other way round.
+            No rota from the hospital, no rent for a clinic. You decide how much you
+            work and what you charge.
           </Reveal>
           <div className="docs-features">
             {controls.map((f, k) => {
@@ -388,6 +405,28 @@ function JoinSteps() {
   );
 }
 
+function Reasons() {
+  return (
+    <section className="promises container">
+      <div className="join-head">
+        <SplitHeading text={'Your own practice,\n*without a clinic.*'} />
+      </div>
+      <div className="promises-grid">
+        {reasons.map((p, k) => {
+          const Icon = p.icon;
+          return (
+            <Reveal key={p.title} className="promise" delay={k * 0.08}>
+              <Icon size={24} />
+              <b>{p.title}</b>
+              <p>{p.copy}</p>
+            </Reveal>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function Promises() {
   return (
     <section className="promises container">
@@ -415,8 +454,8 @@ function DocCta() {
         <div className="cta2-copy">
           <SplitHeading text={'Register in minutes.\n*It’s free.*'} />
           <Reveal as="p" delay={0.1}>
-            Get verified now, and be among the first practitioners patients see when
-            Charak launches in your city.
+            We start in Mumbai. Get verified now and you will be among the first
+            practitioners patients see on launch day.
           </Reveal>
           <Reveal className="cta2-actions" delay={0.2}>
             <Link to="/register" className="button button-dark" data-testid="doctors-register-link">
@@ -433,6 +472,7 @@ export default function Doctors() {
   return (
     <main className="home2 doc2">
       <DocHero />
+      <Reasons />
       <Eligible />
       <Controls />
       <Bhishak />
